@@ -1,8 +1,8 @@
 # API 계약
 
-- Swagger UI: `http://localhost:8010/docs`
-- OpenAPI JSON: `http://localhost:8010/openapi.json`
-- Android 에뮬레이터 base URL: `http://10.0.2.2:8010/api/v1`
+- Swagger UI: `http://localhost:8090/docs`
+- OpenAPI JSON: `http://localhost:8090/openapi.json`
+- Android 에뮬레이터 base URL: `http://10.0.2.2:8090/api/v1`
 - bootstrap 이후 모든 `/api/v1` 요청에 `X-Device-ID` 헤더가 필요합니다.
 
 ## 연동 순서

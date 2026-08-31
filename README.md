@@ -6,8 +6,14 @@ Flutter 앱과 FastAPI 백엔드를 함께 관리하는 팀 모노레포입니�
 
 1. Docker Desktop을 실행합니다.
 2. 저장소 루트에서 `docker compose up --build`를 실행합니다.
-3. Swagger UI는 `http://localhost:8010/docs`에서 확인합니다.
-4. Android 에뮬레이터의 API base URL은 `http://10.0.2.2:8010/api/v1`입니다.
+3. Swagger UI는 `http://localhost:8090/docs`에서 확인합니다.
+4. Android 에뮬레이터의 API base URL은 `http://10.0.2.2:8090/api/v1`입니다.
+
+전체 API 흐름 smoke test는 다음과 같이 실행합니다.
+
+```powershell
+py apps/backend/scripts/smoke_test.py
+```
 
 로컬 Python으로 실행하려면 `apps/backend`에서 다음을 실행합니다.
 

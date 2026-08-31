@@ -25,7 +25,7 @@ flowchart LR
 
 ## 실행 환경
 
-- 1차 시연: Android 에뮬레이터 → `10.0.2.2:8010`
+- 1차 시연: Android 에뮬레이터 → `10.0.2.2:8090`
 - 백엔드: FastAPI 단일 서비스
 - DB: PostgreSQL
 - 구성: Docker Compose

@@ -2,7 +2,7 @@
 
 Flutter 코드는 이 폴더에 추가합니다.
 
-- Android 에뮬레이터 API: `http://10.0.2.2:8010/api/v1`
+- Android 에뮬레이터 API: `http://10.0.2.2:8090/api/v1`
 - 앱 최초 실행 시 UUID v4를 한 번 생성해 로컬 저장합니다.
 - `POST /users/bootstrap`의 `device_id`와 이후 `X-Device-ID` 헤더에 같은 값을 사용합니다.
 - 음성은 앱에서 STT로 텍스트화한 뒤 채팅 API에 보냅니다.
