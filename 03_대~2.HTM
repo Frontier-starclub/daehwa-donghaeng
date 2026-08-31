@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>대화동행 — Flowchart v2.1</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:28px 20px 70px;background:#f5f6f8;color:#1a1a1a;
+    font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;line-height:1.5}
+  .wrap{max-width:1040px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:#666;font-size:13.5px;margin-bottom:20px}
+
+  .legend{background:#fff;border:1px solid #d8d8d8;border-radius:8px;padding:14px 18px;margin-bottom:16px}
+  .legend h3{margin:0 0 10px;font-size:14px}
+  .legend .row{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+  .legend .item{display:flex;align-items:center;gap:7px;font-size:12.5px}
+  .sw{width:34px;height:22px;border-radius:4px;flex:0 0 auto;border:2px solid #333;background:#fff}
+  .sw.proc{background:#e3edfb;border-color:#3f6fae}
+  .sw.api{background:#e3edfb;border-color:#3f6fae;border-left-width:6px}
+  .sw.db{background:#e2f2e5;border-color:#3f8a4b}
+  .sw.err{background:#fbe4e2;border-color:#b3453a}
+  .sw.todo{background:#fdeccd;border-color:#c07d16;border-style:dashed}
+  .sw.dec{background:#fdf0c8;border:none;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .sw.pill{border-radius:11px;background:#e8e8e8;border-color:#666}
+
+  .note{background:#fff6e0;border:1px solid #e3c583;border-radius:8px;padding:12px 16px;font-size:13px;color:#6b4c00;margin-bottom:26px}
+
+  section{background:#fff;border:1px solid #d8d8d8;border-radius:10px;padding:22px 20px 30px;margin-bottom:24px}
+  section>h2{font-size:19px;margin:0 0 4px}
+  .fid{display:inline-block;font-size:11.5px;font-weight:700;background:#333;color:#fff;border-radius:4px;padding:2px 8px;margin-right:8px;vertical-align:middle}
+  .meta{font-size:12.5px;color:#666;margin:2px 0 4px}
+  .core{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:9px;background:#2e6b3a;color:#fff}
+  .support{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:9px;background:#5a6472;color:#fff}
+  .optional{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:9px;background:#8a7a5a;color:#fff}
+  .dev{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:9px;background:#2f5da8;color:#fff}
+  .desc{font-size:13px;color:#444;margin:8px 0 20px;padding:10px 14px;background:#f7f8fa;border-left:3px solid #999;border-radius:0 6px 6px 0}
+
+  /* ---- flow primitives ---- */
+  .flow{display:flex;flex-direction:column;align-items:center}
+  .node{border:2px solid #333;background:#fff;border-radius:6px;padding:11px 16px;text-align:center;
+        font-size:13.5px;min-width:210px;max-width:330px}
+  .node .sid{display:block;font-size:11.5px;font-weight:800;letter-spacing:.4px;color:#0b3d91;margin-bottom:3px}
+  .node .sid a{color:#0b3d91;text-decoration:none;border-bottom:1px dotted #0b3d91}
+  .node .sid a:hover{background:#eef3fb}
+  .node .sub2{display:block;font-size:11.5px;color:#666;margin-top:4px}
+
+  .n-pill{border-radius:22px;background:#e8e8e8;border-color:#666;font-weight:700;min-width:170px}
+  .n-proc{background:#e3edfb;border-color:#3f6fae}
+  .n-api{background:#e3edfb;border-color:#3f6fae;border-left-width:7px}
+  .n-db{background:#e2f2e5;border-color:#3f8a4b;font-size:12.5px}
+  .n-err{background:#fbe4e2;border-color:#b3453a}
+  .n-todo{background:#fdeccd;border-color:#c07d16;border-style:dashed;font-size:12.5px}
+  .n-todo b{color:#8a5a00}
+  .n-note{background:#f4f4f6;border-color:#aaa;border-style:dotted;font-size:12px;color:#555;min-width:180px}
+  .n-goto{background:#fff;border-color:#777;border-style:dashed;font-size:12.5px;color:#444;min-width:170px;border-radius:20px}
+
+  .n-dec{width:290px;min-height:136px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+    background:#fdf0c8;color:#5c4600;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:0 42px;font-size:13px;font-weight:700;border:none;border-radius:0}
+
+  .ar{width:2px;height:40px;background:#555;position:relative;flex:0 0 auto}
+  .ar:after{content:"";position:absolute;bottom:-2px;left:-6px;width:0;height:0;
+    border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid #555}
+  .ar .lb{position:absolute;left:11px;top:7px;white-space:nowrap;font-size:12px;color:#222;
+    background:#fff;padding:1px 6px;border-radius:3px;border:1px solid #e0e0e0}
+  .ar .lb.r{left:auto;right:11px}
+  .ar.short{height:28px}
+  .ar.long{height:56px}
+
+  .hbar{width:70%;max-width:640px;height:2px;background:#555;margin:0 auto}
+  .split{display:flex;gap:26px;justify-content:center;align-items:flex-start;width:100%;flex-wrap:wrap}
+  .col{display:flex;flex-direction:column;align-items:center;flex:1 1 300px;min-width:280px}
+  .col .bl{font-size:12px;font-weight:800;color:#444;background:#eee;border-radius:4px;padding:2px 10px;margin-bottom:4px}
+  .col .bl.yes{background:#dff0e2;color:#1f5c2b}
+  .col .bl.no{background:#fbe4e2;color:#8a2f26}
+
+  .stack{display:flex;flex-direction:column;align-items:center}
+  .grp{border:1px dashed #bbb;border-radius:10px;padding:14px 12px 18px;margin:6px 0;background:#fbfbfc;width:100%}
+  .grp>.gt{font-size:12px;font-weight:800;color:#666;text-align:center;margin-bottom:10px}
+
+  .gate{border:2px dashed #c07d16;background:#fff8ea;border-radius:8px;padding:10px 16px;
+    font-size:12.5px;color:#7a5200;text-align:center;font-weight:700;max-width:420px}
+
+  @media (max-width:720px){
+    .n-dec{width:250px;min-height:120px;padding:0 32px;font-size:12px}
+    .split{gap:12px}
+    .col{min-width:230px;flex-basis:230px}
+  }
+  @media print{
+    body{background:#fff;padding:0}
+    section{break-inside:avoid;page-break-inside:avoid;border:1px solid #999;box-shadow:none}
+    .legend,.note{break-inside:avoid}
+    a{text-decoration:none;color:#000}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>대화동행 — Flowchart <span style="font-size:16px;color:#888">v2.1</span></h1>
+<div class="sub">기능·사용자 흐름 문서 · v2.1 · 2026.08.13 · 화면 상세는 <strong>04_대화동행_화면설계서_v2.1.html</strong> 참조</div>
+
+<div class="legend">
+  <h3>도형 규칙</h3>
+  <div class="row">
+    <span class="item"><span class="sw pill"></span> 시작 / 종료</span>
+    <span class="item"><span class="sw"></span> 앱 화면 (Screen ID 표기)</span>
+    <span class="item"><span class="sw dec"></span> 조건 분기</span>
+    <span class="item"><span class="sw proc"></span> AI / 서버 처리</span>
+    <span class="item"><span class="sw api"></span> 외부 API (좌측 굵은 선)</span>
+    <span class="item"><span class="sw db"></span> DB 저장</span>
+    <span class="item"><span class="sw err"></span> 오류 · 예외</span>
+    <span class="item"><span class="sw todo"></span> 추가 결정 필요 / MVP 임시 제안 (확정 아님)</span>
+  </div>
+</div>
+
+<div class="note">
+  <strong>이 문서는 흐름을 보는 문서입니다.</strong> UI 모습·버튼 모양·화면 미리보기는 넣지 않습니다.
+  파란 <strong>Screen ID</strong>를 누르면 화면설계서의 해당 화면으로 이동합니다 (두 파일이 같은 폴더에 있을 때).
+  링크가 열리지 않는 환경이라면 <strong>동일한 Screen ID</strong>로 화면설계서에서 직접 찾으세요.
+</div>
+
+<!-- ================= FC-00 ================= -->
+<section>
+  <h2><span class="fid">FC-00</span>전체 서비스 Flow</h2>
+  <div class="meta">서비스 구조를 10~20초 안에 파악하기 위한 지도. <strong>세부 예외처리는 넣지 않습니다.</strong></div>
+  <div class="desc">
+    <strong>읽는 순서</strong> ① 기본 사용 라인 → ② 대화 라인 → ③ 보호자 리포트.<br>
+    <strong>동의는 앱 전체의 관문이 아닙니다.</strong> 분석 동의는 FT-05의 Gate, 보호자 공유 동의는 FT-06의 Gate로만 작동합니다.
+  </div>
+
+  <div class="gate" style="max-width:640px;margin:0 auto 18px;border-color:#3f8a4b;background:#eef7ef;color:#1f5c2b">
+    분석 동의 · 보호자 공유 동의를 하지 않아도<br>FT-01 OCR · FT-02 DUR · FT-03 복약관리 · FT-04 AI 대화는 정상 이용 가능
+  </div>
+
+  <div class="flow">
+    <div class="node n-pill">앱 사용 시작</div>
+    <div class="ar short"></div>
+    <div class="node" style="background:#f4f4f6"><span class="sid">FT-07</span>최초 설정 · 동의 입력<span class="sub2">FC-07 · 분석 동의와 보호자 공유 동의를 각각 받아 저장<br>여기서 기능을 막지 않음</span></div>
+    <div class="ar short"></div>
+    <div class="node n-pill">HOME-01 홈</div>
+    <div class="ar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl">① 기본 사용 라인 · 동의와 무관</div>
+        <div class="node"><span class="sid">FT-01</span>약 등록 / OCR</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid">FT-02</span>DUR 상호작용 정보 확인</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid">FT-03</span>복약 알림시간 설정</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid">FT-03</span>복약 알림 및 확인</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 복약 기록</div>
+      </div>
+
+      <div class="col">
+        <div class="bl">② 대화 라인</div>
+        <div class="node"><span class="sid">FT-04</span>저녁 AI 대화 제안</div>
+        <div class="ar short"></div>
+        <div class="n-dec">사용자 선택<br>대화하기 / 오늘은 하지 않기</div>
+        <div class="ar short"><span class="lb">대화하기</span></div>
+        <div class="node"><span class="sid">FT-04</span>AI 대화</div>
+        <div class="ar short"></div>
+        <div class="gate">Gate ① · <strong>분석 동의</strong>가 있을 때만 FT-05 진행<br><span style="font-weight:400">미동의 시 대화는 그대로 이용, 분석만 하지 않음</span></div>
+        <div class="ar short"></div>
+        <div class="node n-proc"><span class="sid">FT-05</span>감정·인지 관련 분석</div>
+        <div class="ar short"></div>
+        <div class="node n-proc"><span class="sid">FT-05</span>Baseline / 누적 변화 추적</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 구조화된 분석 지표</div>
+      </div>
+    </div>
+
+    <div class="ar long"><span class="lb">③ 복약 기록 + 구조화된 분석 지표</span></div>
+    <div class="gate">Gate ② · <strong>보호자 공유 동의</strong> + 사용자가 허용한 공유 항목만<br><span style="font-weight:400">미동의 시 리포트를 생성하지 않음. 나머지 기능에는 영향 없음</span></div>
+    <div class="ar short"></div>
+    <div class="node n-proc"><span class="sid">FT-06</span>보호자 리포트 생성<span class="sub2">입력은 구조화 지표와 복약 기록만<br>대화 원문·음성은 입력되지 않음</span></div>
+    <div class="ar"></div>
+    <div class="node n-pill">보호자에게 전달<span class="sub2" style="font-weight:400">공유 동의 범위 내</span></div>
+  </div>
+</section>
+
+<!-- ================= FC-01 ================= -->
+<section>
+  <h2><span class="fid">FC-01</span>약 등록 / OCR</h2>
+  <div class="meta"><span class="core">CORE</span> <span class="dev">DEV-1</span> · 기능 ID <strong>FT-01</strong></div>
+  <div class="desc">
+    <strong>사용자의 최종 확인 없이 OCR 결과를 DUR로 넘기지 않습니다.</strong> OCR 오인식 가능성을 전제로 한 구조입니다.
+    촬영이 불가능한 경우를 위해 직접 입력 경로가 항상 열려 있습니다.
+  </div>
+
+  <div class="flow">
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#HOME-01">HOME-01</a></span>홈</div>
+    <div class="ar"><span class="lb">약 등록하기</span></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#OCR-01">OCR-01</a></span>약 등록 시작</div>
+    <div class="ar short"></div>
+    <div class="n-dec">등록 방법</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <!-- 촬영 -->
+      <div class="col">
+        <div class="bl">촬영</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#OCR-02">OCR-02</a></span>약봉투 촬영</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#OCR-03">OCR-03</a></span>사진 확인</div>
+        <div class="ar short"><span class="lb">이 사진 사용</span></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#OCR-04">OCR-04</a></span>인식 처리 중</div>
+        <div class="ar short"></div>
+        <div class="node n-api">Claude API · 이미지 인식</div>
+        <div class="ar short"></div>
+        <div class="n-dec">인식 성공?</div>
+        <div class="hbar"></div>
+
+        <div class="split">
+          <div class="col">
+            <div class="bl no">NO</div>
+            <div class="ar short"></div>
+            <div class="node n-err"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#OCR-E1">OCR-E1</a></span>인식 실패</div>
+            <div class="ar short"></div>
+            <div class="node n-db">DB · 실패 케이스 로그<span class="sub2">프롬프트 개선용</span></div>
+            <div class="ar short"></div>
+            <div class="node n-goto">→ OCR-02 다시 촬영<br>또는 OCR-07 직접 입력</div>
+          </div>
+          <div class="col">
+            <div class="bl yes">YES</div>
+            <div class="ar short"></div>
+            <div class="node n-goto">↓ 인식 결과로</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 직접 입력 -->
+      <div class="col">
+        <div class="bl">직접 입력</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#OCR-07">OCR-07</a></span>직접 입력</div>
+        <div class="ar short"><span class="lb">저장</span></div>
+        <div class="node n-goto">↓ 인식 결과 목록으로</div>
+        <div class="ar short"></div>
+        <div class="node n-todo"><b>[추가 결정 필요]</b><br>직접 입력 항목 범위<br><span class="sub2">Blocker A와 연동</span></div>
+      </div>
+    </div>
+
+    <div class="ar long"></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#OCR-05">OCR-05</a></span>인식 결과 확인<span class="sub2">사용자 확인 단계 · 생략 불가</span></div>
+    <div class="ar short"></div>
+    <div class="n-dec">사용자가 수정할<br>항목 있음?</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl yes">YES</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#OCR-06">OCR-06</a></span>개별 약 수정</div>
+        <div class="ar short"><span class="lb">저장 / 취소</span></div>
+        <div class="node n-goto">→ OCR-05 복귀</div>
+      </div>
+      <div class="col">
+        <div class="bl no">NO</div>
+        <div class="ar short"><span class="lb">이 내용이 맞아요</span></div>
+        <div class="node n-db">DB · 약 목록 확정 저장</div>
+        <div class="ar short"></div>
+        <div class="node n-pill">→ FC-02 DUR</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FC-02 ================= -->
+<section>
+  <h2><span class="fid">FC-02</span>DUR 약물 상호작용 정보 확인</h2>
+  <div class="meta"><span class="core">CORE</span> <span class="dev">DEV-1</span> · 기능 ID <strong>FT-02</strong></div>
+  <div class="desc">
+    <strong>질병 진단·처방 기능이 아닙니다.</strong> DUR-02·DUR-03·DUR-04 전 화면에 "의사·약사 상담을 권고합니다" 취지의 문구를 유지합니다.
+    주황 점선 노드는 <strong>8월 개발 전에 팀이 결정해야 하는 지점</strong>입니다.
+  </div>
+
+  <div class="flow">
+    <div class="node n-pill">확정된 신규 약 목록<span class="sub2" style="font-weight:400">FC-01에서 전달</span></div>
+    <div class="ar"></div>
+    <div class="node n-todo"><b>기존 복용약 확보 — [추가 결정 필요]</b><br><span class="sub2">Blocker C · 후보: 앱 등록 이력 자동 사용 / 최초 1회 직접 입력 / 새 약봉투 내부만 비교</span></div>
+    <div class="ar"></div>
+    <div class="node n-todo"><b>약 이름 → 코드 매핑 — [API 구조 확인 필요]</b><br><span class="sub2">Blocker B · DUR API가 요구하는 식별자에 따라 이 단계의 필요 여부가 결정됨</span></div>
+    <div class="ar"></div>
+    <div class="node n-api">식약처 DUR API<span class="sub2">병용금기 · 노인주의 · 효능군중복</span></div>
+    <div class="ar short"></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#DUR-01">DUR-01</a></span>상호작용 확인 중</div>
+    <div class="ar short"></div>
+    <div class="n-dec">조회 성공?</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl no">NO</div>
+        <div class="ar short"></div>
+        <div class="node n-err"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#DUR-E1">DUR-E1</a></span>조회 실패</div>
+        <div class="ar short"></div>
+        <div class="split">
+          <div class="col">
+            <div class="bl">다시 시도</div>
+            <div class="ar short"></div>
+            <div class="node n-goto">→ DUR API 재조회</div>
+          </div>
+          <div class="col">
+            <div class="bl">나중에 확인</div>
+            <div class="ar short"></div>
+            <div class="node n-db">DB · 미확인 상태 저장</div>
+            <div class="ar short"></div>
+            <div class="node n-todo"><b>[MVP 임시 제안]</b> 미확인 상태로<br>복약 알림 설정 계속 진행<br><span class="sub2">확정된 서비스 정책 아님<br>진행 허용 여부 [추가 결정 필요]</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="bl yes">YES</div>
+        <div class="ar short"></div>
+        <div class="n-dec">조회된<br>주의사항 존재?</div>
+        <div class="hbar"></div>
+        <div class="split">
+          <div class="col">
+            <div class="bl no">NO</div>
+            <div class="ar short"></div>
+            <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#DUR-02">DUR-02</a></span>확인한 항목에서<br>주의사항이 조회되지 않음<span class="sub2">안전을 단정하는 표현 사용 금지<br>[최종 문안 추가 결정 필요]</span></div>
+          </div>
+          <div class="col">
+            <div class="bl yes">YES</div>
+            <div class="ar short"></div>
+            <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#DUR-03">DUR-03</a></span>확인이 필요한 내용 있음</div>
+            <div class="ar short"><span class="lb">자세히 보기</span></div>
+            <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#DUR-04">DUR-04</a></span>주의사항 상세</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ar long"></div>
+    <div class="gate">전 결과 화면 공통 · "의사·약사 상담을 권고합니다"</div>
+    <div class="ar short"></div>
+    <div class="node n-pill">→ FC-03 복약 알림시간 설정</div>
+  </div>
+</section>
+
+<!-- ================= FC-03 ================= -->
+<section>
+  <h2><span class="fid">FC-03</span>복약관리</h2>
+  <div class="meta"><span class="core">CORE</span> <span class="dev">DEV-2</span> · 기능 ID <strong>FT-03</strong></div>
+  <div class="desc">
+    앱이 복용시간을 추천하지 않습니다. 사용자가 자신의 복약계획에 맞춰 <strong>알림시간을 설정</strong>하는 기능입니다.
+    <strong>AI 챗봇이 복약 여부를 확인하지 않습니다.</strong>
+  </div>
+
+  <div class="flow">
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#MED-01">MED-01</a></span>복약 알림시간 설정</div>
+    <div class="ar short"><span class="lb">저장</span></div>
+    <div class="node n-db">DB · 복약일정 저장</div>
+    <div class="ar short"></div>
+    <div class="node n-proc">서버 · 알림 예약</div>
+    <div class="ar"><span class="lb">설정 시각 도달</span></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#MED-04">MED-04</a></span>복약 알림<span class="sub2">시스템 푸시 · AI 아님</span></div>
+    <div class="ar short"><span class="lb">확인</span></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#MED-05">MED-05</a></span>약을 드셨나요?</div>
+    <div class="ar short"></div>
+    <div class="n-dec">사용자 응답</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl yes">예, 먹었어요</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 복용함 기록</div>
+      </div>
+      <div class="col">
+        <div class="bl no">아니요, 아직이요</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 아직 복용하지 않음 기록</div>
+      </div>
+    </div>
+
+    <div class="ar long"></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#MED-03">MED-03</a></span>오늘 복약 일정</div>
+    <div class="ar short"></div>
+    <div class="node n-goto">→ FC-06 보호자 리포트 입력값</div>
+  </div>
+
+  <div class="flow" style="margin-top:18px">
+    <div class="node n-todo"><b>[추가 결정 필요]</b> 미응답 / 재알림 정책<br><span class="sub2">재알림 횟수·간격 · 재알림 없음 · "아직이요" 응답 후 재확인 여부 · 복약 확인율 계산식</span></div>
+  </div>
+</section>
+
+<!-- ================= FC-04 ================= -->
+<section>
+  <h2><span class="fid">FC-04</span>저녁 AI 대화</h2>
+  <div class="meta"><span class="core">CORE</span> <span class="dev">DEV-3</span> · 기능 ID <strong>FT-04</strong></div>
+  <div class="desc">
+    복약 알림과 <strong>별개 기능</strong>입니다. <strong>참여는 강제가 아닙니다.</strong> 거절 경로를 숨기거나 어렵게 만들지 않습니다.
+  </div>
+
+  <div class="flow">
+    <div class="node n-todo"><b>저녁 시각 도달 — [추가 결정 필요]</b><br><span class="sub2">제안 시각 미정</span></div>
+    <div class="ar short"></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#CHAT-01">CHAT-01</a></span>오늘 이야기 나누실까요?</div>
+    <div class="ar short"></div>
+    <div class="n-dec">사용자 선택</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl no">오늘은 하지 않기</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 해당일 대화 없음 기록</div>
+        <div class="ar short"></div>
+        <div class="node n-pill">→ HOME-01 홈</div>
+      </div>
+
+      <div class="col">
+        <div class="bl yes">대화하기</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#CHAT-02">CHAT-02</a></span>AI 대화</div>
+        <div class="ar short"></div>
+        <div class="node n-api">STT · 음성 인식<span class="sub2">구현 수단 [추가 결정 필요]</span></div>
+        <div class="ar short"></div>
+        <div class="n-dec">인식 성공?</div>
+        <div class="hbar"></div>
+        <div class="split">
+          <div class="col">
+            <div class="bl no">NO</div>
+            <div class="ar short"></div>
+            <div class="node n-err"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#CHAT-E1">CHAT-E1</a></span>음성 인식 실패</div>
+            <div class="ar short"></div>
+            <div class="node n-goto">→ 다시 말하기<br>또는 대화 끝내기</div>
+          </div>
+          <div class="col">
+            <div class="bl yes">YES</div>
+            <div class="ar short"></div>
+            <div class="node n-proc">AI 응답 생성</div>
+            <div class="ar short"><span class="lb">대화 반복</span></div>
+            <div class="node n-goto">→ CHAT-02 복귀</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ar long"><span class="lb">사용자가 종료</span></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#CHAT-03">CHAT-03</a></span>대화 종료</div>
+    <div class="ar short"></div>
+    <div class="n-dec">분석 동의 있음?</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl no">NO</div>
+        <div class="ar short"></div>
+        <div class="node n-pill">분석하지 않음</div>
+      </div>
+      <div class="col">
+        <div class="bl yes">YES</div>
+        <div class="ar short"></div>
+        <div class="node n-pill">→ FC-05 분석 Flow</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FC-05 ================= -->
+<section>
+  <h2><span class="fid">FC-05</span>감정·인지 분석 및 변화 추적</h2>
+  <div class="meta"><span class="core">CORE</span> <span class="dev">DEV-4</span> · 기능 ID <strong>FT-05</strong></div>
+  <div class="desc">
+    <strong>이 Flow는 화면 흐름이 아니라 시스템 / 데이터 Flow입니다.</strong> 사용자 화면은 선택 사항인 INSIGHT-01뿐입니다.<br>
+    개발 순서가 DEV-4일 뿐, 서비스 중요도는 <strong>CORE</strong>입니다. <strong>질환 진단 노드는 존재하지 않습니다.</strong>
+  </div>
+
+  <div class="flow">
+    <div class="node n-pill">대화 원문<span class="sub2" style="font-weight:400">분석 시스템 처리 대상 · 보호자 접근·공유 금지</span></div>
+    <div class="ar short"></div>
+    <div class="gate">Gate · 분석 동의 확인</div>
+    <div class="ar short"></div>
+    <div class="node n-proc">AI 분석<span class="sub2">감정 관련 지표 · 인지 관련 언어·행동 지표</span></div>
+    <div class="ar short"></div>
+    <div class="node n-db">DB · 세션별 구조화 지표 저장</div>
+    <div class="ar short"></div>
+    <div class="n-dec">비교 데이터 충분?</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl no">NO</div>
+        <div class="ar short"></div>
+        <div class="node n-proc">Baseline / 기준 데이터 축적 중</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 분석값 저장<span class="sub2">다음 대화 데이터 축적</span></div>
+        <div class="ar short"></div>
+        <div class="node n-note">노출이 필요한 경우<br>"아직 변화를 비교할<br>기록이 충분하지 않습니다."</div>
+      </div>
+
+      <div class="col">
+        <div class="bl yes">YES</div>
+        <div class="ar short"></div>
+        <div class="node n-proc">기준 데이터 / 이전 기간<br>vs 현재 기간 비교</div>
+        <div class="ar short"></div>
+        <div class="node n-proc">변화 경향 생성</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 기간별 누적 지표 저장</div>
+      </div>
+    </div>
+
+    <div class="ar long"></div>
+    <div class="node n-db">보호자 리포트용 구조화 데이터<span class="sub2">지표 · 변화량 · 데이터 충분/부족 상태</span></div>
+    <div class="ar short"></div>
+    <div class="node n-pill">→ FC-06 보호자 리포트</div>
+  </div>
+
+  <div class="flow" style="margin-top:18px">
+    <div class="node n-todo"><b>[추가 결정 필요]</b> Baseline 최소 대화 횟수 · 기간 · 발화량<br>분석 지표 항목 · 비교 기준 기간 · 변화 판단 기준 · 분석 실행 시점</div>
+    <div class="ar short"></div>
+    <div class="node n-todo"><b>[추가 결정 필요]</b> 사용자 본인 노출 여부<br><span class="sub2"><a href="04_대화동행_화면설계서_v2.1.html#INSIGHT-01">INSIGHT-01</a> 내 변화 요약 · OPTIONAL</span></div>
+  </div>
+</section>
+
+<!-- ================= FC-06 ================= -->
+<section>
+  <h2><span class="fid">FC-06</span>보호자 리포트</h2>
+  <div class="meta"><span class="core">CORE</span> <span class="dev">DEV-5</span> · 기능 ID <strong>FT-06</strong></div>
+  <div class="desc">
+    입력은 <strong>복약 기록</strong>과 <strong>FT-05의 구조화된 분석 지표</strong>뿐입니다.
+    <strong>대화 원문·음성은 입력 노드로 연결되지 않습니다.</strong>
+  </div>
+
+  <div class="flow">
+    <div class="split">
+      <div class="col">
+        <div class="node n-db">복약 기록<span class="sub2">FC-03</span></div>
+      </div>
+      <div class="col">
+        <div class="node n-db">구조화된 분석 지표<span class="sub2">FC-05</span></div>
+      </div>
+    </div>
+    <div class="ar long"></div>
+    <div class="gate">Gate · 보호자 공유 동의 확인</div>
+    <div class="ar short"></div>
+    <div class="n-dec">공유 동의 있음?</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl no">NO</div>
+        <div class="ar short"></div>
+        <div class="node n-pill">종료 · 생성하지 않음</div>
+      </div>
+      <div class="col">
+        <div class="bl yes">YES</div>
+        <div class="ar short"></div>
+        <div class="node n-proc">사용자가 허용한 공유 항목 필터<span class="sub2">복약 기록 ON/OFF · 감정 변화 요약 ON/OFF · 인지 변화 요약 ON/OFF</span></div>
+        <div class="ar short"></div>
+        <div class="node n-proc">보호자 리포트 생성</div>
+        <div class="ar short"></div>
+        <div class="node n-proc">출력 결과 검수<span class="sub2">생성된 리포트 문안을 검사<br>진단적 표현 · 허용되지 않은 자유서술 · 구체적 사생활 서술 차단</span></div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#REPORT-01">REPORT-01</a></span>보호자 리포트 요약</div>
+        <div class="ar short"><span class="lb">자세히 보기<br>안 B에서만</span></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#REPORT-02">REPORT-02</a></span>리포트 상세<span class="sub2">안 A 이메일 채택 시 미사용 또는 후순위</span></div>
+      </div>
+    </div>
+
+    <div class="ar long"><span class="lb">전달</span></div>
+    <div class="node n-todo"><b>전달 방식 — [추가 결정 필요]</b><br><span class="sub2">안 A 이메일 · REPORT-01이 완결된 내용<br>안 B 대시보드 · REPORT-01 → REPORT-02 상세 이동</span></div>
+  </div>
+
+  <div class="flow" style="margin-top:18px">
+    <div class="node n-err" style="max-width:470px">리포트 생성기 입력 금지<span class="sub2">대화 원문 · 실제 음성 · 대화에서 언급한 구체적인 사생활 내용<br>애초에 입력되지 않으므로 "원문 검출" 단계는 존재하지 않음<br>검수는 <strong>생성된 출력물</strong>을 대상으로 수행</span></div>
+  </div>
+</section>
+
+<!-- ================= FC-07 ================= -->
+<section>
+  <h2><span class="fid">FC-07</span>동의 및 정보공유</h2>
+  <div class="meta"><span class="support">SUPPORT</span> <span class="dev">DEV-2</span> · 기능 ID <strong>FT-07</strong></div>
+  <div class="desc">
+    분석 동의와 보호자 공유 동의는 <strong>분리</strong>합니다. 동의 여부와 무관하게 서비스는 계속 사용 가능합니다.
+    <strong>분석 동의를 강제로 유도하지 않습니다.</strong>
+  </div>
+
+  <div class="flow">
+    <div class="node n-pill">서비스 최초 사용</div>
+    <div class="ar short"></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#ONB-01">ONB-01</a></span>서비스 소개</div>
+    <div class="ar short"></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#ONB-02">ONB-02</a></span>이름 입력<span class="sub2">[MVP 임시 제안]</span></div>
+    <div class="ar short"></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#ONB-03">ONB-03</a></span>분석 동의 설명<span class="sub2">두 선택지 모두 충분한 터치 영역</span></div>
+    <div class="ar short"></div>
+    <div class="n-dec">분석 동의?</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl no">NO</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 분석 미동의 저장</div>
+        <div class="ar short"></div>
+        <div class="node n-note">서비스 계속 사용 가능</div>
+      </div>
+      <div class="col">
+        <div class="bl yes">YES</div>
+        <div class="ar short"></div>
+        <div class="node n-db">DB · 분석 동의 저장</div>
+        <div class="ar short"></div>
+        <div class="node n-note">서비스 계속 사용 가능</div>
+      </div>
+    </div>
+
+    <div class="ar long"></div>
+    <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#ONB-04">ONB-04</a></span>보호자 공유 여부</div>
+    <div class="ar short"></div>
+    <div class="n-dec">공유 희망?</div>
+    <div class="hbar"></div>
+
+    <div class="split">
+      <div class="col">
+        <div class="bl no">NO</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#ONB-07">ONB-07</a></span>설정 완료</div>
+      </div>
+      <div class="col">
+        <div class="bl yes">YES</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#ONB-05">ONB-05</a></span>보호자 지정</div>
+        <div class="ar short"></div>
+        <div class="node n-todo"><b>[추가 결정 필요]</b> 보호자 인증 방식</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#ONB-06">ONB-06</a></span>공유 항목 설정</div>
+        <div class="ar short"></div>
+        <div class="n-dec">분석 동의<br>상태는?</div>
+        <div class="hbar"></div>
+        <div class="split">
+          <div class="col">
+            <div class="bl no">미동의</div>
+            <div class="ar short"></div>
+            <div class="node n-note">복약 기록 → 선택 가능<br>감정 변화 → <b>disabled</b><br>인지 변화 → <b>disabled</b><br><span class="sub2">"대화 분석을 사용하지 않아<br>선택할 수 없습니다."</span></div>
+          </div>
+          <div class="col">
+            <div class="bl yes">동의</div>
+            <div class="ar short"></div>
+            <div class="node n-note">복약 기록 · 감정 변화 요약<br>인지 변화 요약<br>모두 선택 가능</div>
+          </div>
+        </div>
+        <div class="ar long"></div>
+        <div class="node n-db">DB · 항목별 공유 설정</div>
+        <div class="ar short"></div>
+        <div class="node"><span class="sid"><a href="04_대화동행_화면설계서_v2.1.html#ONB-07">ONB-07</a></span>설정 완료</div>
+      </div>
+    </div>
+
+    <div class="ar long"></div>
+    <div class="node n-pill">→ HOME-01 홈</div>
+  </div>
+
+  <div class="flow" style="margin-top:18px">
+    <div class="node n-note" style="max-width:440px">대화 원문 공유 항목은 제공하지 않음<span class="sub2">선택지 자체를 만들지 않습니다</span></div>
+  </div>
+</section>
+
+<p style="font-size:12px;color:#777;text-align:center;margin-top:28px">
+대화동행 Flowchart v2.1 · 2026.08.13 · Master: 02_대화동행_MVP설계서_v2.1.md · 화면 상세: 04_대화동행_화면설계서_v2.1.html · 미결정: 06_대화동행_미결정사항_v2.1.md
+</p>
+
+</div>
+</body>
+</html>

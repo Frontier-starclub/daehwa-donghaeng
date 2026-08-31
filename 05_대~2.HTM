@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>대화동행 — 중요 화면 UI A/B/C안 v2.1</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:30px 22px 80px;background:#f4f5f7;color:#1a1a1a;
+    font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;line-height:1.55}
+  .wrap{max-width:1400px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:#666;font-size:13.5px;margin-bottom:18px}
+  .notice{background:#fdf3e3;border:1px solid #e0b060;border-radius:8px;padding:14px 18px;font-size:13.5px;color:#6b4c00;margin-bottom:26px}
+
+  section{background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px;margin-bottom:28px}
+  section>h2{font-size:20px;margin:0 0 3px}
+  .sid{font-size:12.5px;font-weight:800;color:#0b3d91;letter-spacing:.4px}
+  .badges{margin:5px 0 6px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .bg{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:9px}
+  .bg.core{background:#2e6b3a;color:#fff}
+  .bg.dev{background:#2f5da8;color:#fff}
+  .bg.ft{background:#333;color:#fff}
+  .bg.fc{background:#f2f6fc;color:#0b3d91;border:1px solid #c9d6ea}
+  .qs{font-size:13.5px;color:#555;margin:6px 0 12px;padding:10px 14px;background:#f7f8fa;border-left:3px solid #2f6fdb;border-radius:0 6px 6px 0}
+  .fb{font-size:13px;color:#6b4c00;margin:0 0 18px;padding:9px 14px;background:#fdf7ea;border:1px dashed #d9c288;border-radius:6px}
+
+  .opts{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:22px}
+  .opt{flex:0 0 340px}
+  .opt-head{margin-bottom:10px}
+  .opt-tag{display:inline-block;font-size:13px;font-weight:800;color:#fff;background:#2f6fdb;border-radius:5px;padding:3px 10px;margin-right:8px}
+  .opt-name{font-size:16px;font-weight:700}
+  .opt-desc{font-size:12.5px;color:#666;margin-top:4px;min-height:34px}
+
+  .phone{width:340px;height:620px;border:3px solid #2b2b2b;border-radius:22px;background:#fff;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{height:26px;background:#2b2b2b;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;flex:0 0 auto}
+  .navbar{flex:0 0 auto;height:50px;border-bottom:2px solid #e0e0e0;display:flex;align-items:center;gap:10px;padding:0 14px}
+  .navbar .back{font-size:22px;font-weight:700}
+  .navbar .ttl{font-size:19px;font-weight:700}
+  .screen{flex:1;padding:16px;display:flex;flex-direction:column;gap:13px;overflow:hidden}
+
+  .h1s{font-size:27px;font-weight:800;line-height:1.35}
+  .h2s{font-size:22px;font-weight:700;line-height:1.4}
+  .body{font-size:20px;line-height:1.5}
+  .small{font-size:16px;color:#666;line-height:1.45}
+  .tiny{font-size:14px;color:#777}
+  .btn{border-radius:10px;text-align:center;font-size:22px;font-weight:700;padding:18px 8px;min-height:72px;display:flex;align-items:center;justify-content:center}
+  .btn.pri{background:#2f6fdb;color:#fff}
+  .btn.sec{background:#fff;border:3px solid #555;color:#222}
+  .btn.eq{background:#fff;border:3px solid #2f6fdb;color:#14448f}
+  .btn.sm{font-size:18px;min-height:54px;padding:12px 8px}
+  .btn.ghost{background:transparent;color:#2f6fdb;font-size:17px;min-height:auto;padding:8px;text-decoration:underline}
+  .list-item{border:2px solid #ccc;border-radius:10px;padding:13px;font-size:19px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .list-item.done{border-color:#2e7d32;background:#eef7ef}
+  .chip{font-size:14px;padding:4px 9px;border-radius:14px;background:#eee;font-weight:700;flex:0 0 auto}
+  .card-b{border:2px solid #ddd;border-radius:12px;padding:14px}
+  .card-b .ct{font-size:15px;color:#777;font-weight:700;margin-bottom:6px}
+  .grow{flex:1}
+  .infobox{border:3px solid #2f6fdb;border-radius:10px;background:#eef4ff;padding:14px}
+  .neutralbox{border:3px solid #6b7280;border-radius:10px;background:#f3f4f6;padding:14px}
+  .fixedbar{flex:0 0 auto;background:#fff4d6;border-top:2px solid #e0c060;padding:10px 14px;font-size:15px;font-weight:700;text-align:center;color:#6b4c00}
+  .tabbar{flex:0 0 auto;height:62px;border-top:2px solid #e0e0e0;display:flex}
+  .tabbar div{flex:1;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#777}
+  .tabbar div.on{color:#2f6fdb}
+  .banner{border:3px solid #2f6fdb;border-radius:12px;background:#eef4ff;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal div{aspect-ratio:1;border-radius:5px;background:#f0f1f3;display:flex;align-items:center;justify-content:center;font-size:12px;color:#555}
+  .cal div.ok{background:#cbe7cf;color:#1c4a22;font-weight:700}
+  .cal div.no{background:#e8e2d0;color:#6b5a1f;font-weight:700}
+  .cal div.on{outline:3px solid #2f6fdb}
+  .bubble{max-width:88%;padding:12px 14px;border-radius:14px;font-size:18px;line-height:1.45;background:#eef1f5;border-bottom-left-radius:4px}
+  .barchart{display:flex;align-items:flex-end;gap:8px;height:88px}
+  .barchart div{flex:1;background:#9fb8dd;border-radius:4px 4px 0 0}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid #ddd;padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#f0f2f5;font-weight:700}
+  th.rowh{background:#f7f8fa;width:120px}
+  td.a{background:#fcfdff}
+  .rate{font-weight:800}
+  .r-best{color:#1c6b2a}.r-good{color:#0b3d91}.r-mid{color:#8a6d00}.r-low{color:#a03020}
+  .und{color:#b8860b;font-weight:700}
+  .must{color:#c0392b;font-weight:700}
+  code{background:#f0f1f3;padding:1px 5px;border-radius:3px;font-size:12px}
+  .linkbox{margin-top:16px;background:#f7f8fa;border-left:3px solid #999;padding:12px 16px;font-size:13px;border-radius:0 6px 6px 0}
+  .linkbox h4{margin:0 0 6px;font-size:13.5px}
+  .linkbox ol{margin:0;padding-left:20px}
+  .linkbox li{margin-bottom:5px}
+  @media print{body{background:#fff}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>대화동행 — 중요 화면 UI A/B/C안 <span style="font-size:16px;color:#888">v2.1</span></h1>
+<div class="sub">
+  홈 · 복약관리 · AI 대화 시작 · 보호자 리포트 · v2.1 · 2026.08.13 ·
+  Master: <strong>02_대화동행_MVP설계서_v2.1.md</strong> · 화면 상세: <strong>04_대화동행_화면설계서_v2.1.html</strong>
+</div>
+
+<div class="notice" style="background:#fdf7ea;border-color:#d9c288">
+  <strong>팀 피드백 기록 (v2.1에서 귀속 수정)</strong><br>
+  &gt; "주요화면 a,b,c안에서 b안은 별로이고 a와 c 중에서는 a가 좋다" — 팀원 1인<br>
+  <strong>UI A/B/C안 전반에 대해 A 선호 / B 비선호 의견 1건.</strong> 발언에서 특정 화면이 지목되지 않아
+  <strong>적용 대상 화면은 다음 회의에서 확인이 필요합니다.</strong> 개인 의견이며 팀 최종 결정이 아닙니다.<br>
+  <span style="color:#a03020">※ v2에서는 이 의견을 HOME-01에만 귀속시켜 기록했으나, 근거가 불충분하여 문서 전반 의견으로 정정했습니다.</span>
+</div>
+
+<div class="notice">
+  <strong>최종안이 확정되지 않았습니다.</strong> 각 안은 색상·버튼 위치가 아니라 <strong>정보구조와 사용 경험 자체가 다른</strong> 대안입니다.
+  이 문서는 <strong>팀 논의를 위한 후보</strong>이며 최종 디자인이 아닙니다. 화면 안의 약 이름·수치는 배치 확인용 임의 예시입니다.
+  맨 아래 <strong>"함께 결정해야 하는 것"</strong>의 연동 관계를 반드시 같이 보세요.
+</div>
+
+<!-- ================= 홈 ================= -->
+<section>
+  <div class="sid">HOME-01</div>
+  <h2>1. 홈 화면</h2>
+  <div class="badges"><span class="bg ft">FT-전체</span><span class="bg fc">관련 Flow: FC-00, FC-01</span><span class="bg core">CORE</span><span class="bg dev">DEV-1</span></div>
+  <div class="qs">핵심 질문 — 앱을 열었을 때 <strong>정보를 먼저 보여줄 것인가, 행동을 먼저 물을 것인가.</strong></div>
+
+  <div class="opts">
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">A안</span><span class="opt-name">오늘 할 일 중심</span>
+        <div class="opt-desc">오늘 복약 일정을 홈에 직접 노출. 탭 이동 없이 상태 확인</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">대화동행</span></div>
+        <div class="screen">
+          <div class="h2s">오늘의 약</div>
+          <div class="list-item done"><span>아침 8:00</span><span class="chip">드심</span></div>
+          <div class="list-item"><span>저녁 19:00</span><span class="chip">아직</span></div>
+          <div class="grow"></div>
+          <div class="btn pri">약 등록하기</div>
+          <div class="btn sec sm">오늘의 약 보기</div>
+        </div>
+        <div class="tabbar"><div class="on">홈</div><div>내 약</div><div>기록</div><div>설정</div></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">B안</span><span class="opt-name">큰 버튼 2개</span>
+        <div class="opt-desc">홈에는 행동 2개만. 정보는 진입 후 확인</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">대화동행</span></div>
+        <div class="screen">
+          <div class="h1s" style="text-align:center;margin-top:6px">안녕하세요<br>배○○ 님</div>
+          <div class="grow"></div>
+          <div class="btn pri" style="min-height:150px;font-size:26px">오늘의 약<br>확인하기</div>
+          <div class="btn sec" style="min-height:150px;font-size:26px">약<br>등록하기</div>
+          <div class="grow"></div>
+          <div class="btn ghost">설정</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">C안</span><span class="opt-name">카드 스택</span>
+        <div class="opt-desc">복약·대화·변화요약을 카드로 나열. 스크롤 탐색</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">대화동행</span></div>
+        <div class="screen" style="gap:11px">
+          <div class="card-b">
+            <div class="ct">오늘의 약</div>
+            <div class="body">저녁 19:00 남았어요</div>
+            <div class="btn pri sm" style="margin-top:8px">확인하기</div>
+          </div>
+          <div class="card-b">
+            <div class="ct">저녁 이야기</div>
+            <div class="body">오늘 대화하실까요?</div>
+            <div class="btn sec sm" style="margin-top:8px">대화하기</div>
+          </div>
+          <div class="card-b" style="opacity:.55">
+            <div class="ct">내 변화</div>
+            <div class="small">기록 모으는 중</div>
+          </div>
+          <div class="grow"></div>
+          <div class="btn ghost">약 등록하기</div>
+        </div>
+        <div class="tabbar"><div class="on">홈</div><div>내 약</div><div>기록</div><div>설정</div></div>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th class="rowh"></th><th>A안 — 오늘 할 일 중심</th><th>B안 — 큰 버튼 2개</th><th>C안 — 카드 스택</th></tr>
+    <tr><th class="rowh">정보구조</th>
+      <td class="a">오늘 복약 일정을 시간순 리스트로 홈에 직접 노출</td>
+      <td>홈에는 큰 버튼 2개만. 상세는 진입 후</td>
+      <td>복약·대화·변화요약을 카드로 세로 나열</td></tr>
+    <tr><th class="rowh">장점</th>
+      <td class="a">앱을 열면 오늘 할 일이 바로 보임. 탭 이동 없이 복약 상태 확인</td>
+      <td>화면이 가장 단순. 선택 부담·오터치 위험 최소</td>
+      <td>기능 확장에 유리. 새 기능은 카드 추가로 대응</td></tr>
+    <tr><th class="rowh">단점</th>
+      <td class="a">등록 약이 많으면 화면이 길어져 스크롤 필요</td>
+      <td>정보를 보려면 한 번 더 진입. 클릭 수 증가</td>
+      <td>카드가 늘면 고령자에게 정보 과다. 스크롤 필수</td></tr>
+    <tr><th class="rowh">고령자 사용성</th><td class="a"><span class="rate r-good">상</span></td><td><span class="rate r-best">최상</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">개발 난이도</th><td class="a"><span class="rate r-mid">중</span></td><td><span class="rate r-best">하</span></td><td><span class="rate r-low">중~상</span></td></tr>
+    <tr><th class="rowh">MVP 적합성</th><td class="a"><span class="rate r-best">높음</span></td><td><span class="rate r-best">높음</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">검토 포인트</th>
+      <td class="a">파일럿 참여자의 평균 복용 약 개수를 모르면 스크롤 길이를 예측할 수 없음 <span class="und">[추가 결정 필요]</span></td>
+      <td>진입 단계가 하나 늘어 복약 확인율 KPI에 불리할 수 있음</td>
+      <td>DEV-3~5 기능이 나오기 전까지 빈 카드가 생김</td></tr>
+  </table>
+</section>
+
+<!-- ================= 복약관리 ================= -->
+<section>
+  <div class="sid">MED-01 (설정) / MED-06 (기록 열람)</div>
+  <h2>2. 복약관리 화면</h2>
+  <div class="badges"><span class="bg ft">FT-03</span><span class="bg fc">관련 Flow: FC-03</span><span class="bg core">CORE</span><span class="bg dev">DEV-2</span></div>
+  <div class="qs">
+    핵심 질문 — <strong>알림시간 설정</strong>을 시간 기준으로 할 것인가, 약 기준으로 할 것인가.<br>
+    <span class="must">전제: 앱이 복용시간을 추천·처방하지 않습니다.</span> 사용자가 자신의 복약계획에 맞춰 <strong>알림 받을 시각</strong>을 정하는 기능입니다.
+  </div>
+
+  <div class="opts">
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">A안</span><span class="opt-name">시간대 프리셋 — 알림시간 설정</span>
+        <div class="opt-desc">아침·점심·저녁·자기 전 4개를 켜고 끄기. 시각은 기본값 제공, 사용자가 변경</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="back">←</span><span class="ttl">복약 알림</span></div>
+        <div class="screen">
+          <div class="h2s">약 알림을<br>언제 받을까요?</div>
+          <div class="small">약봉투에는 <strong>하루 2번</strong>으로 적혀 있어요</div>
+          <div class="list-item"><span>☑ 아침</span><span style="font-size:19px">8:00 ›</span></div>
+          <div class="list-item" style="color:#888"><span>☐ 점심</span><span style="font-size:19px">12:00 ›</span></div>
+          <div class="list-item"><span>☑ 저녁</span><span style="font-size:19px">19:00 ›</span></div>
+          <div class="grow"></div>
+          <div class="btn pri">저장</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">B안</span><span class="opt-name">달력 — 기록 열람 후보</span>
+        <div class="opt-desc">월간 달력에서 날짜를 고르고 그 날의 복약 기록을 확인</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="back">←</span><span class="ttl">복약 기록</span></div>
+        <div class="screen" style="gap:11px">
+          <div class="h2s">8월</div>
+          <div class="cal">
+            <div class="ok">1</div><div class="ok">2</div><div class="no">3</div><div class="ok">4</div><div class="ok">5</div><div class="ok">6</div><div class="no">7</div>
+            <div class="ok">8</div><div class="ok">9</div><div class="ok">10</div><div class="ok">11</div><div class="on">12</div><div>13</div><div>14</div>
+            <div>15</div><div>16</div><div>17</div><div>18</div><div>19</div><div>20</div><div>21</div>
+          </div>
+          <div class="tiny">초록 = 모두 응답 / 회갈색 = 미복용 응답 있음</div>
+          <div class="list-item done" style="font-size:17px"><span>아침 8:00</span><span class="chip">드심</span></div>
+          <div class="list-item" style="font-size:17px"><span>저녁 19:00</span><span class="chip">아직</span></div>
+          <div class="grow"></div>
+          <div class="btn sec sm">알림시간 바꾸기</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">C안</span><span class="opt-name">약 카드별 알림 설정</span>
+        <div class="opt-desc">등록된 약마다 카드. 카드 안에서 그 약의 알림시간을 설정</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="back">←</span><span class="ttl">내 약</span></div>
+        <div class="screen" style="gap:11px">
+          <div class="card-b">
+            <div class="body" style="font-weight:700">아모잘탄정</div>
+            <div class="small">약봉투 용법: 하루 1번</div>
+            <div class="list-item" style="margin-top:8px;font-size:17px"><span>알림 · 아침</span><span style="font-size:17px">8:00 ›</span></div>
+          </div>
+          <div class="card-b">
+            <div class="body" style="font-weight:700">메트포르민<br>서방정</div>
+            <div class="small">약봉투 용법: 하루 2번</div>
+            <div class="list-item" style="margin-top:8px;font-size:17px"><span>알림 · 아침</span><span style="font-size:17px">8:00 ›</span></div>
+            <div class="list-item" style="margin-top:6px;font-size:17px"><span>알림 · 저녁</span><span style="font-size:17px">19:00 ›</span></div>
+          </div>
+          <div class="grow"></div>
+          <div class="btn pri sm">저장</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th class="rowh"></th><th>A안 — 시간대 프리셋 (설정)</th><th>B안 — 달력 (기록 열람 후보)</th><th>C안 — 약 카드별 (설정)</th></tr>
+    <tr><th class="rowh">역할</th>
+      <td class="a"><code>MED-01</code> 알림시간 설정</td>
+      <td><strong>설정 UI가 아니라 <code>MED-06</code> 기록 열람 UI 후보</strong>로 구분</td>
+      <td><code>MED-01</code> 알림시간 설정</td></tr>
+    <tr><th class="rowh">정보구조</th>
+      <td class="a">시간대 4개 프리셋을 켜고 끔. 약봉투 용법은 <strong>참고 정보로 별도 표시</strong></td>
+      <td>날짜를 먼저 고르고 그 날짜의 복약 응답 기록을 본다</td>
+      <td>약을 먼저 고르고 그 약의 알림시간을 정한다. 용법과 알림을 카드 안에서 분리 표기</td></tr>
+    <tr><th class="rowh">장점</th>
+      <td class="a">설정이 가장 빠름. 시간 입력 UI를 거의 쓰지 않음</td>
+      <td>복약 이행 이력을 한눈에 파악. 파일럿 결과 정리·보호자 설명에 유리</td>
+      <td>약별 복용법이 다를 때 정확히 대응. 용법/알림 구분이 가장 명확</td></tr>
+    <tr><th class="rowh">단점</th>
+      <td class="a">불규칙 복용(격일 등)을 표현하지 못함</td>
+      <td>고령자에게 달력 조작이 부담. <strong>설정 기능으로 쓰면 오늘 할 일이 묻힘</strong></td>
+      <td>약이 5개면 설정을 5번 반복. 초기 설정 이탈 위험이 가장 큼</td></tr>
+    <tr><th class="rowh">고령자 사용성</th><td class="a"><span class="rate r-best">최상</span></td><td><span class="rate r-low">하 (설정 용도 기준)</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">개발 난이도</th><td class="a"><span class="rate r-best">하</span></td><td><span class="rate r-mid">중</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">MVP 적합성</th><td class="a"><span class="rate r-best">높음</span></td><td><span class="rate r-mid">중 (기록 열람 용도로는 유효)</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">검토 포인트</th>
+      <td class="a">약봉투 용법(1일 N회)을 OCR로 추출한다면 프리셋 <strong>초기 제안</strong>에 쓸 수 있음 — 단 <span class="must">자동 확정이 아니라 사용자가 최종 선택</span>. Blocker A와 연동 <span class="und">[추가 결정 필요]</span></td>
+      <td>A안(설정) + B안(기록) 조합으로 <strong>역할을 나눠 둘 다 채택</strong>하는 방안도 가능</td>
+      <td>파일럿 참여자의 약별 복용시간이 실제로 다른지 사전 확인 필요</td></tr>
+  </table>
+</section>
+
+<!-- ================= AI 대화 ================= -->
+<section>
+  <div class="sid">CHAT-01</div>
+  <h2>3. AI 대화 시작 화면</h2>
+  <div class="badges"><span class="bg ft">FT-04</span><span class="bg fc">관련 Flow: FC-04</span><span class="bg core">CORE</span><span class="bg dev">DEV-3</span></div>
+  <div class="qs">
+    핵심 질문 — <span class="must">"대화 참여는 강제가 아니다"</span>는 원칙을 어떤 구조로 지킬 것인가.
+    동시에 FT-06 리포트의 "AI 대화 참여 정도"가 정확히 기록되어야 합니다.
+  </div>
+
+  <div class="opts">
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">A안</span><span class="opt-name">2버튼 균등</span>
+        <div class="opt-desc">[대화하기]와 [오늘은 하지 않기]를 같은 크기로</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>20:00</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">저녁 인사</span></div>
+        <div class="screen">
+          <div class="grow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px">
+            <div class="h1s">오늘<br>이야기<br>나누실까요?</div>
+            <div class="body" style="color:#555">잠깐이어도 괜찮아요</div>
+          </div>
+          <div class="btn pri" style="min-height:84px">대화하기</div>
+          <div class="btn eq" style="min-height:84px">오늘은 하지 않기</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">B안</span><span class="opt-name">대화 미리보기</span>
+        <div class="opt-desc">첫 인사말을 먼저 보여주고 참여 여부를 묻는다</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>20:00</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">저녁 인사</span></div>
+        <div class="screen">
+          <div class="small">오늘의 첫 인사</div>
+          <div class="bubble">오늘 날씨가 참<br>좋았죠. 어떻게<br>보내셨어요?</div>
+          <div class="small" style="margin-top:4px">이런 이야기를 나눠요</div>
+          <div class="grow"></div>
+          <div class="btn pri">이야기 시작하기</div>
+          <div class="btn eq sm">오늘은 하지 않기</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">C안</span><span class="opt-name">홈 내 배너</span>
+        <div class="opt-desc">별도 화면 없이 홈 상단 배너. 무시하면 자연 소멸</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>20:00</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">대화동행</span></div>
+        <div class="screen">
+          <div class="banner">
+            <div><div class="body" style="font-weight:700">오늘 이야기<br>나누실까요?</div></div>
+            <div class="chip" style="background:#2f6fdb;color:#fff;font-size:15px">시작</div>
+          </div>
+          <div class="h2s" style="margin-top:6px">오늘의 약</div>
+          <div class="list-item done"><span>아침 8:00</span><span class="chip">드심</span></div>
+          <div class="list-item done"><span>저녁 19:00</span><span class="chip">드심</span></div>
+          <div class="grow"></div>
+          <div class="btn sec sm">약 등록하기</div>
+        </div>
+        <div class="tabbar"><div class="on">홈</div><div>내 약</div><div>기록</div><div>설정</div></div>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th class="rowh"></th><th>A안 — 2버튼 균등</th><th>B안 — 대화 미리보기</th><th>C안 — 홈 내 배너</th></tr>
+    <tr><th class="rowh">정보구조</th>
+      <td class="a">전체 화면에 참여/거절 두 버튼을 같은 크기·비중으로</td>
+      <td>첫 인사말을 먼저 보여준 뒤 참여/거절</td>
+      <td>별도 화면 없이 홈 상단 배너</td></tr>
+    <tr><th class="rowh">장점</th>
+      <td class="a">선택이 명확. <strong>거절이 대화만큼 쉬워 "참여는 강제가 아니다" 원칙에 가장 부합</strong></td>
+      <td>무엇을 하는지 이해한 뒤 선택 가능. 첫 참여 장벽이 낮음</td>
+      <td>거절 행동 자체가 필요 없어 심리적 부담 최소</td></tr>
+    <tr><th class="rowh">단점</th>
+      <td class="a">무슨 대화인지 모른 채 선택해야 함</td>
+      <td>미리보기 생성에 AI 호출 1회 추가. 거절 시 그 비용이 낭비됨</td>
+      <td>배너를 인지 못 하면 참여율 급락. <strong>참여/거절 구분이 흐려져 FT-06 참여도 기록이 부정확</strong></td></tr>
+    <tr><th class="rowh">고령자 사용성</th><td class="a"><span class="rate r-best">최상</span></td><td><span class="rate r-good">상</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">개발 난이도</th><td class="a"><span class="rate r-best">하</span></td><td><span class="rate r-mid">중</span></td><td><span class="rate r-best">하</span></td></tr>
+    <tr><th class="rowh">MVP 적합성</th><td class="a"><span class="rate r-best">높음</span></td><td><span class="rate r-mid">중</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">검토 포인트</th>
+      <td class="a">어느 안을 고르든 <span class="must">거절 버튼을 작게 만들지 않는다</span>는 제약은 공통</td>
+      <td>미리보기를 <strong>고정 문구</strong>로 하면 AI 호출 없이 B안 장점의 일부를 얻음</td>
+      <td>"AI 대화 참여 정도"가 리포트 항목이므로 참여/거절이 명확히 기록되는 구조가 유리</td></tr>
+  </table>
+</section>
+
+<!-- ================= 보호자 리포트 ================= -->
+<section>
+  <div class="sid">REPORT-01</div>
+  <h2>4. 보호자 리포트 화면</h2>
+  <div class="badges"><span class="bg ft">FT-06</span><span class="bg fc">관련 Flow: FC-06</span><span class="bg core">CORE</span><span class="bg dev">DEV-5</span></div>
+  <div class="qs">
+    핵심 질문 — 보호자에게 <strong>전체를 요약</strong>할 것인가, <strong>항목별로 나눌</strong> 것인가, <strong>달라진 점을 먼저</strong> 보여줄 것인가.
+  </div>
+  <div class="fb">
+    <strong>전달 방식과의 관계 (v2.1 추가)</strong> — 전달 방식은 아직 <span class="und">[추가 결정 필요]</span>입니다. (Decision Log <code>B-20</code>)<br>
+    · <strong>안 A 이메일</strong> — <code>REPORT-01</code> 자체가 <strong>완결된 리포트 본문</strong>. 별도 웹페이지를 두지 않는다면 [자세히 보기]와 <code>REPORT-02</code>는 <strong>사용하지 않음(후순위)</strong>.<br>
+    · <strong>안 B 보호자 대시보드</strong> — <code>REPORT-01</code> 요약 → [자세히 보기] → <code>REPORT-02</code> 상세 구조 사용 가능.<br>
+    아래 A/B/C안은 <strong>세 안 모두 안 A·안 B 어느 쪽에서도 쓸 수 있도록</strong> 요약 화면 기준으로 그렸습니다.
+  </div>
+  <div class="fb">
+    <strong>세 안 공통 제약</strong> — ① 대화 원문·음성·사생활 내용을 포함하지 않는다.
+    ② 질환명·확률·진단·판정·의심 표현을 쓰지 않는다.
+    ③ <span class="must">대화 참여 횟수 감소를 상태 악화로 해석하지 않는다.</span> 참여 횟수는 <strong>관찰된 사실</strong>로만 표기하며, 감정·인지 지표와 혼동하지 않는다.
+    ④ 데이터 부족 시 추정하지 않고 "기록 모으는 중"으로 표시한다.
+  </div>
+
+  <div class="opts">
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">A안</span><span class="opt-name">한 장 요약</span>
+        <div class="opt-desc">모든 항목을 한 화면(메일 1스크롤)에 압축</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>보호자 화면</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">8월 1주 소식</span></div>
+        <div class="screen" style="gap:11px">
+          <div class="small">배○○ 어르신 · 8/3 ~ 8/9</div>
+          <div class="infobox" style="padding:12px">
+            <div style="font-size:18px"><strong>약 드심 86%</strong><br><span style="font-size:15px;color:#555">지난주 79% → 이번주 86%</span></div>
+          </div>
+          <div class="list-item" style="font-size:17px"><span>대화 참여</span><span class="chip">5일 / 7일</span></div>
+          <div class="list-item" style="font-size:17px"><span>마음 변화</span><span class="chip">비슷한 편</span></div>
+          <div class="list-item" style="font-size:16px;color:#777"><span>기억 변화</span><span class="chip">기록 모으는 중</span></div>
+          <div class="grow"></div>
+          <div class="btn sec sm">자세히 보기</div>
+        </div>
+        <div class="fixedbar">진단이 아니며, 대화 내용은 포함되지 않습니다</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">B안</span><span class="opt-name">항목별 섹션</span>
+        <div class="opt-desc">복약 / 대화 / 감정 / 인지를 독립 섹션으로 나열</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>보호자 화면</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">8월 1주 소식</span></div>
+        <div class="screen" style="gap:11px">
+          <div class="card-b">
+            <div class="ct">1. 복약</div>
+            <div class="body">86% · 7일 중 6일</div>
+            <div class="barchart" style="height:44px;margin-top:8px"><div style="height:100%"></div><div style="height:100%"></div><div style="height:50%"></div><div style="height:100%"></div><div style="height:100%"></div></div>
+          </div>
+          <div class="card-b">
+            <div class="ct">2. 대화 참여</div>
+            <div class="body">5일 / 7일</div>
+          </div>
+          <div class="card-b">
+            <div class="ct">3. 마음 변화</div>
+            <div class="body">이전과 비슷한 편</div>
+          </div>
+          <div class="grow"></div>
+          <div class="tiny">4. 기억 변화 — 기록 모으는 중</div>
+        </div>
+        <div class="fixedbar">진단이 아닙니다</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-tag">C안</span><span class="opt-name">변화 표시형</span>
+        <div class="opt-desc">이전 기간과 달라진 항목을 위에. <strong>경고가 아니라 관찰된 수치</strong>로 표기</div></div>
+      <div class="phone">
+        <div class="statusbar"><span>보호자 화면</span><span>▮▮▮</span></div>
+        <div class="navbar"><span class="ttl">8월 1주 소식</span></div>
+        <div class="screen" style="gap:11px">
+          <div class="small">지난 주와 달라진 수치</div>
+          <div class="neutralbox" style="padding:12px">
+            <div class="body">대화 참여</div>
+            <div class="small" style="margin-top:4px;color:#444">지난주 7일 → 이번주 4일</div>
+          </div>
+          <div class="neutralbox" style="padding:12px">
+            <div class="body">약 드심</div>
+            <div class="small" style="margin-top:4px;color:#444">지난주 79% → 이번주 86%</div>
+          </div>
+          <div class="list-item" style="font-size:16px;color:#777"><span>마음 변화</span><span class="chip">비슷한 편</span></div>
+          <div class="list-item" style="font-size:16px;color:#777"><span>기억 변화</span><span class="chip">기록 모으는 중</span></div>
+          <div class="grow"></div>
+          <div class="btn sec sm">전체 보기</div>
+        </div>
+        <div class="fixedbar" style="font-size:14px">관찰된 수치이며 진단이 아닙니다.<br>대화 내용은 포함되지 않습니다</div>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th class="rowh"></th><th>A안 — 한 장 요약</th><th>B안 — 항목별 섹션</th><th>C안 — 변화 표시형</th></tr>
+    <tr><th class="rowh">정보구조</th>
+      <td class="a">복약·대화·감정·인지를 한 화면에 압축</td>
+      <td>항목마다 독립 섹션. 순서대로 나열</td>
+      <td>이전 기간과 달라진 항목을 위로. 나머지는 아래</td></tr>
+    <tr><th class="rowh">장점</th>
+      <td class="a">빠르게 훑기 좋음. <strong>이메일 전송(안 A)에 가장 적합</strong></td>
+      <td>정보 위계가 분명. 원하는 항목만 골라 읽기 쉬움</td>
+      <td>달라진 부분에 빠르게 도달. 정보 과부하 없음</td></tr>
+    <tr><th class="rowh">단점</th>
+      <td class="a">항목이 늘어나면 압축이 어려워짐</td>
+      <td>길어짐. 공유 OFF 항목의 빈 섹션 처리 필요</td>
+      <td><span class="must">변화를 앞세우는 구조라 문구를 잘못 쓰면 경고·진단처럼 읽힐 위험이 가장 큼</span></td></tr>
+    <tr><th class="rowh">보호자 사용성</th><td class="a"><span class="rate r-good">상</span></td><td><span class="rate r-mid">중</span></td><td><span class="rate r-best">최상</span></td></tr>
+    <tr><th class="rowh">개발 난이도</th><td class="a"><span class="rate r-best">하</span></td><td><span class="rate r-good">하~중</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">MVP 적합성</th><td class="a"><span class="rate r-best">높음</span></td><td><span class="rate r-mid">중</span></td><td><span class="rate r-mid">중</span></td></tr>
+    <tr><th class="rowh">검토 포인트</th>
+      <td class="a">전달 방식 안 A(이메일) 채택 시 조합이 자연스러움. 이 경우 <code>REPORT-02</code> 없이 <strong>한 통으로 완결</strong>되어야 하므로 압축 설계가 더 중요해짐</td>
+      <td>전달 방식 안 B(대시보드) 채택 시 유리. 섹션이 길어지면 <code>REPORT-02</code>로 분리 가능</td>
+      <td>채택 시 <strong>문구 검수 절차를 별도로 정해야 함</strong>. "줄었어요" 같은 평가형 표현 대신 <code>7일 → 4일</code> 형태의 수치 표기 유지</td></tr>
+  </table>
+</section>
+
+<!-- ================= 연동 ================= -->
+<section>
+  <h2>5. 선택 시 함께 결정해야 하는 것</h2>
+  <p style="font-size:13.5px;color:#555;margin:6px 0 14px">각 안은 독립적이지 않습니다.</p>
+  <div class="linkbox">
+    <h4>연동 관계</h4>
+    <ol>
+      <li><strong>홈 A안 ↔ 복약 A안</strong> — 홈에 오늘 일정을 노출하려면 시간대 프리셋 구조가 표현하기 쉽습니다.</li>
+      <li><strong>Blocker A(OCR 추출 범위) ↔ 복약 A안</strong> — 약봉투 용법(1일 N회)을 추출하면 프리셋 <strong>초기 제안</strong>에 쓸 수 있습니다. 단 자동 확정이 아니라 사용자가 최종 선택합니다. <span class="und">[추가 결정 필요]</span></li>
+      <li><strong>복약 A안 + B안 병행</strong> — A안은 <code>MED-01</code> 설정, B안은 <code>MED-06</code> 기록 열람으로 역할을 나눠 둘 다 채택하는 방안도 가능합니다.</li>
+      <li><strong>리포트 전달 안 A/B ↔ 리포트 A/B/C안</strong> — 이메일이면 리포트 A안, 대시보드면 리포트 B안이 자연스럽습니다. <span class="und">[추가 결정 필요]</span></li>
+      <li><strong>CHAT-01 C안(배너) ↔ FT-06</strong> — 배너 방식은 참여/거절 기록이 흐려져 "AI 대화 참여 정도"의 정확도가 떨어집니다.</li>
+    </ol>
+  </div>
+  <div class="linkbox" style="border-left-color:#c0392b;background:#fdf5f4">
+    <h4>공통 제약 — 어느 안을 고르든 유지</h4>
+    <ol>
+      <li>DUR 관련 전 화면에 <strong>"의사·약사 상담을 권고합니다"</strong> 고정 노출. <code>DUR-02</code>에서 <strong>안전을 단정하는 표현 사용 금지</strong></li>
+      <li>보호자에게 <strong>대화 원문·음성 미제공</strong>. 리포트 생성기 입력에 원문을 연결하지 않음 — 따라서 "원문 검출" 단계는 존재하지 않으며, 검수는 <strong>생성된 출력물</strong>을 대상으로 수행</li>
+      <li>분석·리포트 문구에 <strong>질환명·확률·진단·판정·의심</strong> 표현 금지</li>
+      <li>AI 대화 <strong>참여는 선택</strong>. 거절 경로가 참여 경로보다 어렵지 않을 것</li>
+      <li>동의/미동의 선택지를 <strong>시각적으로 균등</strong>하게. 분석 동의를 강제로 유도하지 않을 것</li>
+      <li>복약관리에서 <strong>앱이 복용시간을 추천·처방하는 것처럼 표현하지 않을 것</strong></li>
+    </ol>
+  </div>
+</section>
+
+<p style="font-size:12px;color:#777;text-align:center;margin-top:28px">
+대화동행 UI A/B/C안 v2.1 · 2026.08.13 · <strong>최종안 미확정</strong> — 팀 논의 후 선택 · 미결정 목록: 06_대화동행_미결정사항_v2.1.md
+</p>
+
+</div>
+</body>
+</html>
