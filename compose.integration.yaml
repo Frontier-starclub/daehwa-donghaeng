@@ -1,0 +1,32 @@
+# Run from the backend root:
+# docker compose -f compose.yaml -f compose.integration.yaml up --build --wait
+# Paths resolve relative to compose.yaml. AI_BUILD_CONTEXT points to the ai/
+# directory, including when client-repo becomes a separate repository root.
+services:
+  ai:
+    build:
+      context: ${AI_BUILD_CONTEXT:-../daehwa-donghaeng-frontend/client-repo/ai}
+    environment:
+      APP_ENV: development
+      PROVIDER_MODE: ${AI_PROVIDER_MODE:-mock}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DATA_GO_KR_SERVICE_KEY: ${DATA_GO_KR_SERVICE_KEY:-}
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8100/health/live', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # No host port: only the backend calls this service.
+
+  backend:
+    environment:
+      PROVIDER_MODE: ${PROVIDER_MODE:-remote}
+      AI_SERVICE_URL: http://ai:8100
+      AI_SERVICE_TIMEOUT: ${AI_SERVICE_TIMEOUT:-30}
+    depends_on:
+      ai:
+        condition: service_healthy

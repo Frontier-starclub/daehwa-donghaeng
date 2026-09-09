@@ -3,14 +3,21 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.dependencies import CurrentUser, DbSession
 from app.errors import AppError
 from app.models import DurCheck, DurWarning, Medication, MedicationScan
-from app.providers import MedicationForCheck, dur_provider, ocr_provider
+from app.providers import (
+    DURProvider,
+    MedicationForCheck,
+    OCRProvider,
+    get_dur_provider,
+    get_ocr_provider,
+)
 from app.schemas import (
     DurCheckIn,
     DurCheckOut,
@@ -42,6 +49,7 @@ async def scan_medication(
     user: CurrentUser,
     db: DbSession,
     image: Annotated[UploadFile, File()],
+    ocr_provider: Annotated[OCRProvider, Depends(get_ocr_provider)],
     scenario: Annotated[
         Literal["success", "empty", "failure"], Query()
     ] = "success",
@@ -60,7 +68,7 @@ async def scan_medication(
     )
     db.add(scan)
     try:
-        recognized = ocr_provider.recognize(contents, scenario)
+        recognized = await run_in_threadpool(ocr_provider.recognize, contents, scenario)
     except RuntimeError:
         scan.status = "failed"
         scan.error_code = "OCR_PROVIDER_ERROR"
@@ -161,6 +169,7 @@ def create_dur_check(
     payload: DurCheckIn,
     user: CurrentUser,
     db: DbSession,
+    dur_provider: Annotated[DURProvider, Depends(get_dur_provider)],
     scenario: Literal["none", "warning", "failure"] = Query(default="none"),
 ) -> DurCheck:
     medications = list(

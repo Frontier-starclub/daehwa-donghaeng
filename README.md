@@ -1,6 +1,9 @@
 # 대화동행 · 프런티어
 
-Flutter 앱과 FastAPI 백엔드를 함께 관리하는 팀 모노레포입니다. 현재 백엔드는 외부 API 키 없이도 OCR, DUR, AI 채팅 흐름을 시연할 수 있도록 mock provider를 사용합니다.
+Flutter 앱과 FastAPI 백엔드를 함께 관리하는 팀 모노레포입니다. 백엔드는 내부 mock과 별도 AI 서비스 HTTP 연결을 `PROVIDER_MODE=mock/remote`로 전환합니다. AI mock 서버를 사용하면 remote 통합도 API 키 없이 검증할 수 있습니다.
+
+현재 작업 폴더 기준 [서버 통합 실행·FE/AI 인수인계](docs/server-integration.md)와
+[검증 결과 보고서](docs/integration-report.md)를 참고하세요.
 
 ## 빠른 실행
 
@@ -12,7 +15,7 @@ Flutter 앱과 FastAPI 백엔드를 함께 관리하는 팀 모노레포입니�
 전체 API 흐름 smoke test는 다음과 같이 실행합니다.
 
 ```powershell
-py apps/backend/scripts/smoke_test.py
+docker compose exec backend python scripts/smoke_test.py http://localhost:8000 --expected-provider mock
 ```
 
 로컬 Python으로 실행하려면 `apps/backend`에서 다음을 실행합니다.
@@ -22,7 +25,7 @@ py -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 alembic upgrade head
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8090
 ```
 
 ## 저장소 구조

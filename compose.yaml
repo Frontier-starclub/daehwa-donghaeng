@@ -21,7 +21,9 @@ services:
     environment:
       APP_ENV: development
       DATABASE_URL: postgresql+psycopg://frontier:frontier@db:5432/frontier
-      PROVIDER_MODE: mock
+      PROVIDER_MODE: ${PROVIDER_MODE:-mock}
+      AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai:8100}
+      AI_SERVICE_TIMEOUT: ${AI_SERVICE_TIMEOUT:-30}
     ports:
       - "8090:8000"
     depends_on:

@@ -1,14 +1,15 @@
 import uuid
 from datetime import UTC, datetime
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.dependencies import CurrentUser, DbSession
 from app.errors import AppError
-from app.models import ChatMessage, ChatSession
-from app.providers import chat_provider
+from app.models import ChatMessage, ChatSession, User
+from app.providers import ChatProvider, get_chat_provider
 from app.schemas import (
     ChatMessageIn,
     ChatSessionCreateIn,
@@ -20,13 +21,16 @@ router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
 
 def get_owned_session(
-    db: DbSession, user_id: uuid.UUID, session_id: uuid.UUID
+    db: DbSession, user_id: uuid.UUID, session_id: uuid.UUID, *, for_update: bool = False
 ) -> ChatSession:
-    session = db.scalar(
+    statement = (
         select(ChatSession)
         .options(selectinload(ChatSession.messages))
         .where(ChatSession.id == session_id, ChatSession.user_id == user_id)
     )
+    if for_update:
+        statement = statement.with_for_update()
+    session = db.scalar(statement)
     if session is None:
         raise AppError(404, "CHAT_SESSION_NOT_FOUND", "대화 세션을 찾을 수 없습니다.")
     return session
@@ -34,8 +38,13 @@ def get_owned_session(
 
 @router.post("/sessions", response_model=ChatSessionOut, status_code=201)
 def create_session(
-    payload: ChatSessionCreateIn, user: CurrentUser, db: DbSession
+    payload: ChatSessionCreateIn,
+    user: CurrentUser,
+    db: DbSession,
+    chat_provider: Annotated[ChatProvider, Depends(get_chat_provider)],
 ) -> ChatSession:
+    # Serialize creation per user while a remote opening is in flight.
+    db.execute(select(User).where(User.id == user.id).with_for_update())
     active = db.scalar(
         select(ChatSession)
         .options(selectinload(ChatSession.messages))
@@ -48,6 +57,15 @@ def create_session(
         raise AppError(409, "ACTIVE_CHAT_EXISTS", "진행 중인 대화를 먼저 종료해주세요.")
 
     consent_allowed = bool(user.consent and user.consent.analysis_allowed)
+    opening = None
+    if payload.decision == "accepted":
+        try:
+            opening = chat_provider.opening_message()
+        except RuntimeError:
+            db.rollback()
+            raise AppError(
+                502, "CHAT_PROVIDER_ERROR", "대화 응답을 받지 못했습니다. 다시 시도해주세요."
+            ) from None
     now = datetime.now(UTC)
     session = ChatSession(
         user_id=user.id,
@@ -63,7 +81,7 @@ def create_session(
         session.messages.append(
             ChatMessage(
                 role="assistant",
-                content=chat_provider.opening_message(),
+                content=opening,
                 sequence_no=1,
             )
         )
@@ -94,8 +112,9 @@ def add_message(
     payload: ChatMessageIn,
     user: CurrentUser,
     db: DbSession,
+    chat_provider: Annotated[ChatProvider, Depends(get_chat_provider)],
 ) -> ChatTurnOut:
-    session = get_owned_session(db, user.id, session_id)
+    session = get_owned_session(db, user.id, session_id, for_update=True)
     if session.status != "active":
         raise AppError(409, "CHAT_SESSION_CLOSED", "종료된 대화에는 메시지를 추가할 수 없습니다.")
 
@@ -120,6 +139,15 @@ def add_message(
             assistant_message=existing_assistant,
         )
 
+    next_count = session.user_message_count + 1
+    try:
+        reply = chat_provider.reply(next_count, payload.content)
+    except RuntimeError:
+        db.rollback()
+        raise AppError(
+            502, "CHAT_PROVIDER_ERROR", "대화 응답을 받지 못했습니다. 다시 시도해주세요."
+        ) from None
+
     max_sequence = db.scalar(
         select(func.max(ChatMessage.sequence_no)).where(
             ChatMessage.session_id == session.id
@@ -132,11 +160,11 @@ def add_message(
         sequence_no=max_sequence + 1,
         client_message_id=payload.client_message_id,
     )
-    session.user_message_count += 1
+    session.user_message_count = next_count
     assistant_message = ChatMessage(
         session_id=session.id,
         role="assistant",
-        content=chat_provider.reply(session.user_message_count, payload.content),
+        content=reply,
         sequence_no=max_sequence + 2,
     )
     session.last_activity_at = datetime.now(UTC)
@@ -155,7 +183,7 @@ def add_message(
 def end_session(
     session_id: uuid.UUID, user: CurrentUser, db: DbSession
 ) -> ChatSession:
-    session = get_owned_session(db, user.id, session_id)
+    session = get_owned_session(db, user.id, session_id, for_update=True)
     if session.status == "declined":
         raise AppError(409, "CHAT_SESSION_DECLINED", "거절 기록은 종료할 수 없습니다.")
     if session.status == "active":

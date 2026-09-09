@@ -8,8 +8,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.config import get_settings
 from app.db import Base, get_db
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def mock_settings(monkeypatch):
+    monkeypatch.setenv("PROVIDER_MODE", "mock")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture
@@ -36,9 +45,11 @@ def client(db_session: Session) -> TestClient:
         yield db_session
 
     app.dependency_overrides[get_db] = override_db
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -50,4 +61,3 @@ def registered_client(client: TestClient) -> tuple[TestClient, dict[str, str]]:
     )
     assert response.status_code == 200
     return client, {"X-Device-ID": device_id}
-
