@@ -100,9 +100,7 @@ def get_current_session(user: CurrentUser, db: DbSession) -> ChatSession | None:
 
 
 @router.get("/sessions/{session_id}", response_model=ChatSessionOut)
-def get_session(
-    session_id: uuid.UUID, user: CurrentUser, db: DbSession
-) -> ChatSession:
+def get_session(session_id: uuid.UUID, user: CurrentUser, db: DbSession) -> ChatSession:
     return get_owned_session(db, user.id, session_id)
 
 
@@ -125,6 +123,8 @@ def add_message(
         )
     )
     if existing_user is not None:
+        if existing_user.content != payload.content:
+            raise AppError(409, "MESSAGE_ID_REUSED", "같은 전송 번호의 내용을 바꿀 수 없습니다.")
         existing_assistant = db.scalar(
             select(ChatMessage).where(
                 ChatMessage.session_id == session.id,
@@ -140,19 +140,24 @@ def add_message(
         )
 
     next_count = session.user_message_count + 1
+    # Keep complete user/assistant turns from this owned session only. The
+    # opening is not a user turn. Never mix another session's private text in.
+    previous = list(session.messages)[1:][-20:]
+    history = [{"role": item.role, "content": item.content[:4000]} for item in previous]
     try:
-        reply = chat_provider.reply(next_count, payload.content)
+        reply = chat_provider.reply(next_count, payload.content, history=history)
     except RuntimeError:
         db.rollback()
         raise AppError(
             502, "CHAT_PROVIDER_ERROR", "대화 응답을 받지 못했습니다. 다시 시도해주세요."
         ) from None
 
-    max_sequence = db.scalar(
-        select(func.max(ChatMessage.sequence_no)).where(
-            ChatMessage.session_id == session.id
+    max_sequence = (
+        db.scalar(
+            select(func.max(ChatMessage.sequence_no)).where(ChatMessage.session_id == session.id)
         )
-    ) or 0
+        or 0
+    )
     user_message = ChatMessage(
         session_id=session.id,
         role="user",
@@ -180,9 +185,7 @@ def add_message(
 
 
 @router.post("/sessions/{session_id}/end", response_model=ChatSessionOut)
-def end_session(
-    session_id: uuid.UUID, user: CurrentUser, db: DbSession
-) -> ChatSession:
+def end_session(session_id: uuid.UUID, user: CurrentUser, db: DbSession) -> ChatSession:
     session = get_owned_session(db, user.id, session_id, for_update=True)
     if session.status == "declined":
         raise AppError(409, "CHAT_SESSION_DECLINED", "거절 기록은 종료할 수 없습니다.")
@@ -191,5 +194,11 @@ def end_session(
         session.status = "ended"
         session.ended_at = now
         session.last_activity_at = now
-        db.commit()
-    return get_owned_session(db, user.id, session.id)
+    # Release the session lock before acquiring the user lock for analysis.
+    # Consent withdrawal acquires those locks in the opposite order.
+    db.commit()
+    from app.insights import analyze_session
+
+    result = get_owned_session(db, user.id, session.id)
+    analyze_session(result, user, db)
+    return result

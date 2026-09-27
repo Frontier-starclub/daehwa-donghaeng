@@ -33,6 +33,10 @@ def test_consent_is_separate(registered_client) -> None:
     assert response.json()["consent"] == {
         "analysis_allowed": True,
         "caregiver_share_allowed": False,
+        "share_medication": False,
+        "share_mood": False,
+        "share_language": False,
+        "onboarding_completed": True,
         "updated_at": response.json()["consent"]["updated_at"],
     }
 
@@ -44,4 +48,3 @@ def test_unregistered_device_is_rejected(client: TestClient) -> None:
     )
     assert response.status_code == 401
     assert response.json()["code"] == "DEVICE_NOT_REGISTERED"
-

@@ -12,6 +12,10 @@ class ApiModel(BaseModel):
 class ConsentOut(ApiModel):
     analysis_allowed: bool
     caregiver_share_allowed: bool
+    share_medication: bool
+    share_mood: bool
+    share_language: bool
+    onboarding_completed: bool
     updated_at: datetime
 
 
@@ -27,12 +31,18 @@ class UserUpdateIn(BaseModel):
 class ConsentUpdateIn(BaseModel):
     analysis_allowed: bool
     caregiver_share_allowed: bool
+    share_medication: bool = False
+    share_mood: bool = False
+    share_language: bool = False
+    onboarding_completed: bool = True
 
 
 class UserOut(ApiModel):
     id: uuid.UUID
     device_id: str
     display_name: str
+    chat_reminder_enabled: bool
+    chat_reminder_at: time
     consent: ConsentOut
     created_at: datetime
     updated_at: datetime
@@ -56,6 +66,7 @@ class MedicationScanOut(ApiModel):
 
 
 class MedicationBatchIn(BaseModel):
+    request_id: uuid.UUID | None = None
     scan_id: uuid.UUID | None = None
     items: list[MedicationDraft] = Field(min_length=1, max_length=30)
 
@@ -109,7 +120,7 @@ class ScheduleItemIn(BaseModel):
 
 
 class ScheduleReplaceIn(BaseModel):
-    schedules: list[ScheduleItemIn] = Field(min_length=1, max_length=8)
+    schedules: list[ScheduleItemIn] = Field(default_factory=list, max_length=8)
 
 
 class ScheduleOut(ApiModel):
@@ -175,3 +186,11 @@ class ErrorBody(BaseModel):
     message: str
     details: object | None = None
 
+
+class ReminderSettingsIn(BaseModel):
+    chat_reminder_enabled: bool
+    chat_reminder_at: time
+
+
+class CaregiverAcceptIn(BaseModel):
+    code: str = Field(min_length=20, max_length=100)

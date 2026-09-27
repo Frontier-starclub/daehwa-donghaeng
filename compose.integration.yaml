@@ -9,8 +9,14 @@ services:
     environment:
       APP_ENV: development
       PROVIDER_MODE: ${AI_PROVIDER_MODE:-mock}
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_OCR_MODEL: ${GEMINI_OCR_MODEL:-gemini-3.8-flash}
+      GEMINI_CHAT_MODEL: ${GEMINI_CHAT_MODEL:-gemini-3.8-flash}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       DATA_GO_KR_SERVICE_KEY: ${DATA_GO_KR_SERVICE_KEY:-}
+      OCR_MODEL: ${OCR_MODEL:-claude-opus-5}
+      CHAT_MODEL: ${CHAT_MODEL:-claude-opus-5}
     healthcheck:
       test:
         - CMD
@@ -26,7 +32,7 @@ services:
     environment:
       PROVIDER_MODE: ${PROVIDER_MODE:-remote}
       AI_SERVICE_URL: http://ai:8100
-      AI_SERVICE_TIMEOUT: ${AI_SERVICE_TIMEOUT:-30}
+      AI_SERVICE_TIMEOUT: ${AI_SERVICE_TIMEOUT:-45}
     depends_on:
       ai:
         condition: service_healthy

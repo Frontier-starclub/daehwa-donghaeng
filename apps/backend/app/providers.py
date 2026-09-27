@@ -54,7 +54,12 @@ class ChatProvider(Protocol):
 
     def opening_message(self) -> str: ...
 
-    def reply(self, user_message_count: int, content: str) -> str: ...
+    def reply(
+        self,
+        user_message_count: int,
+        content: str,
+        history: list[dict[str, str]] | None = None,
+    ) -> str: ...
 
 
 class MockOCRProvider:
@@ -110,7 +115,12 @@ class MockChatProvider:
     def opening_message(self) -> str:
         return "오늘 하루 어떻게 보내셨어요?"
 
-    def reply(self, user_message_count: int, content: str) -> str:
+    def reply(
+        self,
+        user_message_count: int,
+        content: str,
+        history: list[dict[str, str]] | None = None,
+    ) -> str:
         return self._replies[(user_message_count - 1) % len(self._replies)]
 
 
@@ -174,9 +184,7 @@ class HttpOCRProvider(_HttpProvider):
         # The existing Protocol carries bytes only. Preserve PNG/JPEG media type
         # from the signature without extending the backend's public API.
         is_png = image.startswith(b"\x89PNG\r\n\x1a\n")
-        filename, media_type = (
-            ("label.png", "image/png") if is_png else ("label.jpg", "image/jpeg")
-        )
+        filename, media_type = ("label.png", "image/png") if is_png else ("label.jpg", "image/jpeg")
         result = self._post(
             "/v1/ocr/prescription-label",
             _OCRResponse,
@@ -204,12 +212,27 @@ class HttpChatProvider(_HttpProvider):
     def opening_message(self) -> str:
         return self._reply(opening=True, user_message_count=0, content="")
 
-    def reply(self, user_message_count: int, content: str) -> str:
+    def reply(
+        self,
+        user_message_count: int,
+        content: str,
+        history: list[dict[str, str]] | None = None,
+    ) -> str:
         return self._reply(
-            opening=False, user_message_count=user_message_count, content=content
+            opening=False,
+            user_message_count=user_message_count,
+            content=content,
+            history=history,
         )
 
-    def _reply(self, *, opening: bool, user_message_count: int, content: str) -> str:
+    def _reply(
+        self,
+        *,
+        opening: bool,
+        user_message_count: int,
+        content: str,
+        history: list[dict[str, str]] | None = None,
+    ) -> str:
         return self._post(
             "/v1/chat/reply",
             _ChatResponse,
@@ -217,6 +240,7 @@ class HttpChatProvider(_HttpProvider):
                 "opening": opening,
                 "user_message_count": user_message_count,
                 "content": content,
+                **({"history": history} if history is not None else {}),
             },
         ).content
 

@@ -35,6 +35,8 @@ class User(TimestampMixin, Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     device_id: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     display_name: Mapped[str] = mapped_column(String(50))
+    chat_reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    chat_reminder_at: Mapped[time] = mapped_column(Time, default=time(19, 0))
 
     consent: Mapped["Consent | None"] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=False
@@ -49,6 +51,10 @@ class Consent(Base):
     )
     analysis_allowed: Mapped[bool] = mapped_column(Boolean, default=False)
     caregiver_share_allowed: Mapped[bool] = mapped_column(Boolean, default=False)
+    share_medication: Mapped[bool] = mapped_column(Boolean, default=False)
+    share_mood: Mapped[bool] = mapped_column(Boolean, default=False)
+    share_language: Mapped[bool] = mapped_column(Boolean, default=False)
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
@@ -89,9 +95,6 @@ class Medication(TimestampMixin, Base):
 
 class MedicationSchedule(TimestampMixin, Base):
     __tablename__ = "medication_schedules"
-    __table_args__ = (
-        UniqueConstraint("medication_id", "remind_at", name="uq_schedule_medication_time"),
-    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     medication_id: Mapped[uuid.UUID] = mapped_column(
@@ -103,6 +106,7 @@ class MedicationSchedule(TimestampMixin, Base):
     time_slot: Mapped[str] = mapped_column(String(20))
     remind_at: Mapped[time] = mapped_column(Time)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class MedicationEvent(Base):
@@ -193,3 +197,74 @@ class ChatMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     session: Mapped[ChatSession] = relationship(back_populates="messages")
+
+
+class MedicationBatchRequest(Base):
+    __tablename__ = "medication_batch_requests"
+    __table_args__ = (
+        UniqueConstraint("user_id", "request_id", name="uq_batch_user_request"),
+        UniqueConstraint("scan_id", name="uq_batch_scan"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    request_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    scan_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("medication_scans.id", ondelete="CASCADE"), nullable=True
+    )
+    payload_hash: Mapped[str] = mapped_column(String(64))
+    medication_ids: Mapped[list] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class SessionAnalysis(Base):
+    __tablename__ = "session_analyses"
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    status: Mapped[str] = mapped_column(String(20))
+    metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    provider: Mapped[str] = mapped_column(String(30))
+    error_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class ConsentHistory(Base):
+    __tablename__ = "consent_history"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    values: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class CaregiverInvitation(Base):
+    __tablename__ = "caregiver_invitations"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CaregiverLink(Base):
+    __tablename__ = "caregiver_links"
+    __table_args__ = (UniqueConstraint("owner_id", "caregiver_id", name="uq_caregiver_pair"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    caregiver_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

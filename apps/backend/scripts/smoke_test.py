@@ -59,7 +59,7 @@ def run_smoke(client, *, expected_provider: str | None = None, image: bytes = PN
         status=201,
         json={"medication_ids": [item["id"] for item in medications]},
     )
-    assert dur["status"] in {"warnings", "no_warnings"}
+    assert dur["status"] in {"warnings", "no_warnings", "unverified"}
     assert dur["disclaimer"]
     persisted_dur = request("GET", f"/api/v1/dur-checks/{dur['id']}")
     for key in ("id", "status", "provider", "warnings", "disclaimer"):

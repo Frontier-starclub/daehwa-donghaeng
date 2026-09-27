@@ -16,6 +16,7 @@ def process_env(**overrides):
     # Both repositories use the package name 'app'; isolate subprocess imports.
     env.pop("PYTHONPATH", None)
     env.pop("ANTHROPIC_API_KEY", None)
+    env.pop("GEMINI_API_KEY", None)
     env.pop("DATA_GO_KR_SERVICE_KEY", None)
     return env
 
@@ -31,7 +32,7 @@ def stop_process(process):
 
 
 @contextmanager
-def serve_app(directory, env):
+def serve_app(directory, env, *, entrypoint="app.main:app"):
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]
@@ -42,7 +43,7 @@ def serve_app(directory, env):
                 sys.executable,
                 "-m",
                 "uvicorn",
-                "app.main:app",
+                entrypoint,
                 "--host",
                 "127.0.0.1",
                 "--port",

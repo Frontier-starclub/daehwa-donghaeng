@@ -23,6 +23,7 @@ dev = [
   "pytest>=8,<9",
   "pytest-cov>=5,<7",
   "ruff>=0.8,<1.0",
+  "anthropic>=1,<2", # Real AI SDK used by the isolated cross-repository E2E tests.
 ]
 
 [tool.setuptools.packages.find]
