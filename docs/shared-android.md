@@ -62,10 +62,11 @@ APK 배포는 별도로 진행한다. Android SDK·JDK가 PATH에 없으면 `AND
 진입점을 인터넷에 공개하기로 결정한 뒤** 다음을 실행한다.
 
 ```sh
-tailscale funnel --bg --yes http://127.0.0.1:8099
+sudo tailscale funnel --bg --yes http://127.0.0.1:8099
 ```
 
 Tailscale이 계정 설정 링크를 출력하면 관리자가 열어 HTTPS/Funnel을 활성화한다.
+Ubuntu에서 공개 설정을 저장하려면 관리자 권한이 필요할 수 있으므로 `sudo`로 실행한다.
 Funnel은 외부 공개용이므로 팀원 휴대폰에 Tailscale 설치가 필요 없다.
 일반 `tailscale serve`는 같은 기능이 아니며 Tailscale 네트워크 안에서만 접근한다.
 [Tailscale Funnel 공식 안내](https://tailscale.com/docs/features/tailscale-funnel)
@@ -84,7 +85,7 @@ python3 scripts/shared_services.py restart
 # 서버 종료; 데이터는 유지
 python3 scripts/shared_services.py stop
 # 이 서비스의 외부 공개만 해제
-tailscale funnel --https=443 off
+sudo tailscale funnel --https=443 off
 ```
 
 서비스는 `daehwa-shared.service`와 `daehwa-gateway.service`라는 systemd 사용자
@@ -102,5 +103,14 @@ tailscale funnel --https=443 off
 - Backend 109 passed, Flutter 42 passed / 조건부 HTTP 테스트 1 skipped, 정적 분석 통과.
 - 공용 주소·팀 접근 설정을 포함한 release APK 빌드와 서명/해시 검증 완료.
   ARM32·ARM64·x86_64를 포함하며 최소 Android 7.0(API 24)이 필요하다.
+- `https://agent-server.tailcf0d2f.ts.net`의 Funnel 활성화 완료.
+  공용 DNS에 등록된 두 중계 IP 모두에서 HTTPS 인증서 검증과 상태 조회가 성공했다.
+- 외부 HTTPS로 익명 API 401, 문서·APK 배포 경로 404, 팀 키를 사용한 사용자 등록·조회,
+  대화 생성·실제 Gemini 두 차례 응답·대화 종료를 확인했다.
+- 활성화 직후 일부 중계의 TLS 오류가 있었고 이후 두 경로 모두 정상 응답했다.
+  초기 대화 요청 두 건은 502였으나 서비스 재시작 후 두 세션에서 총 세 차례 응답에 성공했다.
+  초기 502 원인은 확정하지 못했으며, 재발 시 확인할 공급자·처리 단계·예외 종류 로그를 추가했다.
+  키·대화 내용·예외 원문은 해당 진단 로그에 기록하지 않는다.
+- 진단 로그 반영 후 AI 대화·Gemini 회귀 테스트 118 passed, Ruff 통과.
 - 실제 Android 설치·카메라·음성·알림 도착은 팀원 기기에서 검증해야 한다.
-- 서버 공개 여부와 최신 APK 빌드 결과는 배포 시점의 상태를 별도로 확인한다.
+- 미니 PC의 전원과 인터넷 연결을 유지해야 앱이 서버에 접속할 수 있다.
