@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 import httpx
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse, Response
 
 ROOT = Path(__file__).resolve().parents[3]
 STATE = ROOT / ".local/shared-server"
@@ -48,8 +48,8 @@ def prepare(base_url: str) -> None:
     STATE.chmod(0o700)
     config = json.loads(CONFIG.read_text()) if CONFIG.exists() else {
         "access_token": secrets.token_urlsafe(32),
-        "download_token": secrets.token_urlsafe(32),
     }
+    config.pop("download_token", None)
     config["base_url"] = base_url.rstrip("/")
     private_json(CONFIG, config)
     private_json(STATE / "android-defines.json", {
@@ -59,12 +59,10 @@ def prepare(base_url: str) -> None:
     print("공용 서버 설정과 Android 빌드 설정을 .local/shared-server에 저장했습니다.")
 
 
-def create_app(config: dict, *, transport=None, apk_path: Path | None = None) -> FastAPI:
+def create_app(config: dict, *, transport=None) -> FastAPI:
     access = config.get("access_token", "")
-    download = config.get("download_token", "")
-    if len(access) < 32 or len(download) < 32 or access == download:
-        raise ValueError("서로 다른 충분히 긴 API/다운로드 접근 키가 필요합니다.")
-    apk_path = apk_path or STATE / "daehwa-donghaeng-test.apk"
+    if len(access) < 32:
+        raise ValueError("충분히 긴 API 접근 키가 필요합니다.")
 
     @asynccontextmanager
     async def lifespan(app):
@@ -90,40 +88,6 @@ def create_app(config: dict, *, transport=None, apk_path: Path | None = None) ->
     @app.get("/health/live")
     async def health():
         return {"status": "ok"}
-
-    @app.get("/install/{code}", response_class=HTMLResponse)
-    async def install(code: str):
-        if not matches(code, download):
-            return Response(status_code=404)
-        ready = apk_path.is_file()
-        action = (
-            '<a href="' + code + '/app.apk">Android 앱 다운로드</a>'
-            if ready else "<p>설치 파일을 준비하고 있습니다.</p>"
-        )
-        return HTMLResponse(
-            '<!doctype html><html lang="ko"><meta charset="utf-8">'
-            '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            '<title>대화동행 설치</title><style>'
-            'body{font:18px/1.7 sans-serif;max-width:560px;margin:64px auto;padding:24px;'
-            'color:#243b32;background:#f6f8f5}h1{font-size:32px}'
-            'a{display:block;padding:16px;background:#206344;color:white;'
-            'border-radius:12px;text-align:center;text-decoration:none}'
-            '</style><h1>대화동행 테스트 앱</h1>' + action +
-            '<p>Android 휴대폰에서 다운로드한 파일을 열어 설치해주세요. '
-            '설치 시 이 브라우저의 앱 설치 허용이 필요할 수 있습니다.</p>'
-            '<p>앱을 열면 공용 테스트 서버에 자동으로 연결됩니다. '
-            '복약 알림과 음성 기능은 앱에서 권한을 허용한 뒤 확인해주세요.</p>'
-            '<p>팀 테스트용 링크입니다. 팀 안에서만 공유해주세요.</p></html>'
-        )
-
-    @app.get("/install/{code}/app.apk")
-    async def apk(code: str):
-        if not matches(code, download) or not apk_path.is_file():
-            return Response(status_code=404)
-        return FileResponse(
-            apk_path, media_type="application/vnd.android.package-archive",
-            filename="daehwa-donghaeng-test.apk",
-        )
 
     @app.api_route(
         "/api/v1/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"]
@@ -180,7 +144,7 @@ def main():
     config = json.loads(CONFIG.read_text())
     if args.command == "links":
         print("API: " + config["base_url"] + "/api/v1")
-        print("설치: " + config["base_url"] + "/install/" + config["download_token"])
+        print("APK: " + str(STATE / "daehwa-donghaeng-test.apk"))
         return
     uvicorn.run(
         create_app(config), host="127.0.0.1", port=8099,

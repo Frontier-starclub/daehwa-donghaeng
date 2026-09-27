@@ -18,4 +18,4 @@ cp build/app/outputs/flutter-apk/app-release.apk "$state/daehwa-donghaeng-test.a
 chmod 600 "$state/daehwa-donghaeng-test.apk.next"
 mv "$state/daehwa-donghaeng-test.apk.next" "$state/daehwa-donghaeng-test.apk"
 sha256sum "$state/daehwa-donghaeng-test.apk" > "$state/apk.sha256"
-echo '공용 서버 연결용 APK를 설치 링크에서 받을 수 있도록 준비했습니다.'
+echo '공용 서버 연결용 APK: .local/shared-server/daehwa-donghaeng-test.apk'

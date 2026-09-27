@@ -5,30 +5,26 @@ from fastapi.testclient import TestClient
 from scripts.shared_gateway import MAX_BODY, create_app
 
 ACCESS = "test-api-access-" + "a" * 32
-DOWNLOAD = "test-download-" + "b" * 32
 
 
 @pytest.fixture
-def gateway(tmp_path):
+def gateway():
     calls = []
 
     def upstream(request):
         calls.append(request)
         return httpx.Response(201, json={"ok": True})
 
-    apk = tmp_path / "app.apk"
-    apk.write_bytes(b"test-apk")
     app = create_app(
-        {"access_token": ACCESS, "download_token": DOWNLOAD},
-        transport=httpx.MockTransport(upstream), apk_path=apk,
+        {"access_token": ACCESS}, transport=httpx.MockTransport(upstream),
     )
     with TestClient(app) as client:
         yield client, calls
 
 
-def test_rejects_anonymous_and_download_token_before_upstream(gateway):
+def test_rejects_anonymous_and_incorrect_token_before_upstream(gateway):
     client, calls = gateway
-    for token in ("", "incorrect", DOWNLOAD):
+    for token in ("", "incorrect"):
         response = client.post(
             "/api/v1/users/bootstrap", headers={"Authorization": f"Bearer {token}"},
             json={"device_id": "test-device", "display_name": "Tester"},
@@ -75,18 +71,11 @@ def test_multipart_and_body_limit(gateway):
     assert len(calls) == 1
 
 
-def test_install_link_only_serves_apk_and_does_not_reveal_api_token(gateway):
+def test_server_never_distributes_apk(gateway):
     client, calls = gateway
     assert client.get("/install/wrong").status_code == 404
     assert client.get(f"/install/{ACCESS}/app.apk").status_code == 404
-    page = client.get(f"/install/{DOWNLOAD}")
-    assert page.status_code == 200
-    assert ACCESS not in page.text
-    assert page.headers["referrer-policy"] == "no-referrer"
-    response = client.get(f"/install/{DOWNLOAD}/app.apk")
-    assert response.content == b"test-apk"
-    assert response.headers["content-type"] == "application/vnd.android.package-archive"
-    assert response.headers["cache-control"] == "no-store"
+    assert client.get("/daehwa-donghaeng-test.apk").status_code == 404
     assert not calls
 
 
@@ -95,7 +84,7 @@ def test_upstream_down_returns_retryable_error():
         raise httpx.ConnectError("offline")
 
     app = create_app(
-        {"access_token": ACCESS, "download_token": DOWNLOAD},
+        {"access_token": ACCESS},
         transport=httpx.MockTransport(offline),
     )
     with TestClient(app) as client:
@@ -106,7 +95,7 @@ def test_upstream_down_returns_retryable_error():
     assert response.json()["code"] == "SERVER_UNAVAILABLE"
 
 
-def test_gateway_fails_closed_without_distinct_strong_tokens():
-    for config in ({}, {"access_token": ACCESS, "download_token": ACCESS}):
+def test_gateway_fails_closed_without_strong_token():
+    for config in ({}, {"access_token": "short"}):
         with pytest.raises(ValueError):
             create_app(config)
