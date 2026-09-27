@@ -60,12 +60,15 @@ def available(port):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", action="store_true")
+    parser.add_argument("--shared", action="store_true", help="Use the separate team test database")
     parser.add_argument("--llm-provider", choices=("anthropic", "gemini"))
     parser.add_argument("--check", action="store_true", help="Preflight only; never prints secrets")
     parser.add_argument("--backend-port", type=int, default=8090)
     parser.add_argument("--ai-port", type=int, default=8100)
     parser.add_argument("--db-port", type=int, default=15432)
     args = parser.parse_args()
+    if args.shared and args.fixture:
+        parser.error("--shared와 --fixture는 함께 사용할 수 없습니다.")
     config = {**dotenv_values(ROOT / ".env"), **os.environ}
     selected_ai = ai_environment(config, fixture=args.fixture, llm_provider=args.llm_provider)
     toolbox = ROOT / ".local/tools/postgres"
@@ -83,7 +86,9 @@ def main():
         print(f"LLM: {selected_ai['LLM_PROVIDER']}. 실행 도구·환경변수·포트 확인 완료.")
         print("외부 키의 유효성은 실제 요청으로 확인합니다.")
         return
-    state = ROOT / ".local" / ("fixture" if args.fixture else "development")
+    state = ROOT / ".local" / (
+        "fixture" if args.fixture else "shared" if args.shared else "development"
+    )
     state.mkdir(parents=True, exist_ok=True)
     state.chmod(0o700)
     clean = clean_environment(os.environ)

@@ -2,6 +2,9 @@
 
 FastAPI 백엔드 저장소입니다. Flutter 앱과 AI 서비스는 형제 저장소 `daehwa-donghaeng-frontend/client-repo`에 있습니다. 백엔드는 내부 mock과 별도 AI 서비스 HTTP 연결을 `PROVIDER_MODE=mock/remote`로 전환합니다. AI mock 서버를 사용하면 remote 통합도 API 키 없이 검증할 수 있습니다.
 
+**팀 테스트는 [공용 서버 + Android APK 안내](docs/shared-android.md)를 따릅니다.**
+팀원은 제공된 APK만 설치하고, 서버와 API 키는 미니 PC에서 관리합니다.
+
 **로컬 PC에서 Android 앱을 테스트하려면 [로컬 Android 실행 안내](docs/local-android.md)를 따라 두 저장소의 `feature/gemini-integration` 브랜치를 받으세요.** Docker로 Backend·AI·DB를 실행하고 Flutter 앱을 Android 에뮬레이터에 설치하는 순서입니다.
 
 현재 작업 폴더 기준 [서버 통합 실행·FE/AI 인수인계](docs/server-integration.md)와
